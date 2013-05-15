@@ -38,7 +38,7 @@ int main(void)
     /* get data */
     for(int i=0; i<10; ++i)
     {
-      curl_easy_setopt(curl, CURLOPT_URL, "http://192.168.1.110:8080/");
+      curl_easy_setopt(curl, CURLOPT_URL, "http://192.168.1.110:8081/api/remoteprintercallback/12345");
 
       /* Perform the request, res will get the return code */
       res = curl_easy_perform(curl);
