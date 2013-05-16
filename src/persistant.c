@@ -20,13 +20,25 @@
  *
  ***************************************************************************/
 #include <stdio.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <curl/curl.h>
+
+char buffer[4096];
+
+size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
+{
+  printf("Received data\r\n");
+  printf("--> %s\r\n", ((char *)ptr));
+
+  return size*nmemb;
+}
 
 int main(void)
 {
   CURL *curl;
   CURLcode res;
+  //char str[1024];
 
   curl_global_init(CURL_GLOBAL_ALL);
 
@@ -34,6 +46,9 @@ int main(void)
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
+    //curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
 
     /* get data */
     for(int i=0; i<10; ++i)
