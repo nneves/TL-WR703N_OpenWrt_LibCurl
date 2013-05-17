@@ -23,7 +23,6 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <curl/curl.h>
-
  //-----------------------------------------------------------------------------------------
 // Thread
 #include <pthread.h>
@@ -47,6 +46,9 @@
 #include <string.h> // strncpy strnstr strcmp
 #include <signal.h>
 //-----------------------------------------------------------------------------------------
+#include "JsonParserLib.h"
+ //-----------------------------------------------------------------------------------------
+
 #define BAUDRATE1 B4800
 #define BAUDRATE2 B38400
 #define BAUDRATE3 B57600
@@ -84,6 +86,35 @@ void cleanup(int sig)
   return;
 }
 //-----------------------------------------------------------------------------------------
+
+void test_jsonparser()
+{
+  // testing JSON Parser Lib
+  //const char data[] = "{\"a\":1,\"d\":\"some data\",\"h\":true}";
+  //const char data[] = "{\"a\":\"handshake\",\"d\":\"some data\",\"h\":\"true\"}";
+  const char data[] = "{\"a\":\"handshake\",\"d\":\"some data\",\"h\":{\"cid\":3,\"t\":2}}";
+  //const char data[] = "{\"a\":\"handshake\",\"d\":{\"protocolVersion\":\"1.0\",\"lib\":\"nodejs\",\"userAgent\":\"muzzley-sdk-js\",\"connection\":\"LAN\",\"contentType\":\"application/json\"},\"h\":{\"cid\":1,\"t\":1}}";
+  //const char data[] = "{\"a\":{\"b\":{\"c\":\"Complex data\"}},\"d\":{\"protocolVersion\":\"1.0\",\"lib\":\"nodejs\",\"userAgent\":\"muzzley-sdk-js\",\"connection\":\"LAN\",\"contentType\":\"application/json\"},\"h\":{\"cid\":1,\"t\":{\"x\":\"datay\"}}}";
+
+  TJsonParser *pJsonParser = new TJsonParser(data);
+
+  std::string result;
+  result = pJsonParser->Prop("a")->Value();
+  result = pJsonParser->Prop("d")->Value();
+  result = pJsonParser->Prop("h")->ValueJson()->Prop("cid")->Value();
+  result = pJsonParser->Prop("h")->Prop("cid")->Value();
+
+  // ERROR testing
+  TJsonElement *pjsonelemdemo = pJsonParser->Prop("x");
+  result = pJsonParser->Prop("y")->Value();
+  TJsonParser *pjsonparser = pJsonParser->Prop("z")->ValueJson();
+  TJsonElement *pjsonelem = pJsonParser->Prop("z")->ValueJson()->Prop("cid");
+  result = pJsonParser->Prop("z")->ValueJson()->Prop("cid")->Value();
+  result = pJsonParser->Prop("z")->Prop("cid")->Value();
+
+  delete pJsonParser;
+  pJsonParser = NULL;  
+}
 
 size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
 {
@@ -175,6 +206,10 @@ int main(void)
   char temp_buf[2];
   //char str[1024];
 
+  //---------------------------------------------------------------------------------------
+  // test jsonparser
+  //---------------------------------------------------------------------------------------
+  test_jsonparser();
 
   signal(SIGTERM, cleanup);
   signal(SIGINT, cleanup);
