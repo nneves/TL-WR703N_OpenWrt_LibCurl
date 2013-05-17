@@ -35,7 +35,7 @@ export SIZE=$(TOOLCHAIN)/mips-openwrt-linux-uclibc-size
 #LDFLAGS += -Wl,-rpath-link,$(STAGING_DIR)/usr/lib:$(STAGING_DIR)/lib,-lcurl,-lxml2,-lz,-lssl
 
 
-STATICLINKLIBS=-ldl -lcurl -lz -lssl -lcrypto
+STATICLINKLIBS=-ldl -lcurl -lz -lssl -lcrypto -lpthread
 STATICLINKPATH=libs/library
 INCLUDEDIR=libs/curl
 
@@ -71,7 +71,7 @@ LOBJECTS=$(patsubst $(LSRCDIR)/%,$(BUILDDIR)/%,$(LSOURCES:.$(SRCEXT)=.o))
 OBJECTS=$(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
  
 $(TARGET): $(LOBJECTS) $(OBJECTS)
-	@echo " Linking...$(TARGET)"; $(CC) $^ -o $(TARGET) $(LDFLAGS) -Wl,-rpath-link,libs/library/,-ldl,-lcurl,-lz,-lssl,-lcrypto -L $(STATICLINKPATH) $(STATICLINKLIBS) 
+	@echo " Linking...$(TARGET)"; $(CC) $^ -o $(TARGET) $(LDFLAGS) -Wl,-rpath-link,libs/library/,-ldl,-lcurl,-lz,-lssl,-lcrypto,-lpthread -L $(STATICLINKPATH) $(STATICLINKLIBS) 
 
 # $< = libs/File.cpp
 # $@ = libs/File.o
