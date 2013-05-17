@@ -6,8 +6,8 @@
 #include "JsonParserLib.h"
 //---------------------------------------------------------------------------------------------
 // Enable/Disable printf debug (avoid sending data to USB Serial Port when not required)
-//#if 0
-#if 1
+#if 0
+//#if 1
   #define debug(a) printf a
 #else
   #define debug(a) (void)0
@@ -44,22 +44,22 @@ TJsonElement::TJsonElement(const char *pProp, const char *pValue)
   if(value.find("{")!=std::string::npos || value.find("}")!=std::string::npos)
   {
     fvaluejson = true;
-    //debug(("FOUND COMPLEX JSON VALUE, Parsing with internal TJsonParser object\r\n"));
+    debug(("FOUND COMPLEX JSON VALUE, Parsing with internal TJsonParser object\r\n"));
 
     // creating an internal TJsonParser object to expand the COMPLEX JSON VALUE
     pvaluejson = new TJsonParser(value.c_str());
   }
-  //debug(("* JsonElem[\"%s\"]=%s\r\n", property.c_str(), value.c_str()));
+  debug(("* JsonElem[\"%s\"]=%s\r\n", property.c_str(), value.c_str()));
 }
 
 TJsonElement::~TJsonElement()
 {
-  //debug(("JsonElem[\"%s\"] clear\r\n", property.c_str()));
+  debug(("JsonElem[\"%s\"] clear\r\n", property.c_str()));
   property.clear();
   value.clear();
   if(pvaluejson)
   {
-    //debug(("Deleting internal TJsonParser object\r\n"));
+    debug(("Deleting internal TJsonParser object\r\n"));
     delete pvaluejson;
     pvaluejson = NULL;
   }
@@ -113,7 +113,7 @@ TJsonParser::~TJsonParser()
 
   for(std::vector<TJsonElement*>::iterator it = vDataJsonElement.end()-1; it >= vDataJsonElement.begin(); --it)
   {
-    //debug(("Deleting TJsonParset vector element: %s\r\n", (*it)->Prop().c_str()));
+    debug(("Deleting TJsonParset vector element: %s\r\n", (*it)->Prop().c_str()));
     delete *it;
     *it = NULL;
   }
@@ -133,17 +133,17 @@ void TJsonParser::ParseString()
   std::string::iterator itBegin = buffer.begin();
   if(*itBegin == '{')
   {
-    //debug(("Removing '{' char from begin of buffer\r\n"));
+    debug(("Removing '{' char from begin of buffer\r\n"));
     buffer.erase(itBegin);
   }
   std::string::iterator itEnd = buffer.end();
   itEnd--;
   if(*itEnd == '}')
   {
-    //debug(("Removing '}' char from end of buffer\r\n"));
+    debug(("Removing '}' char from end of buffer\r\n"));
     buffer.erase(itEnd);
   }
-  //debug(("Buffer=%s\r\n", buffer.c_str()));
+  debug(("Buffer=%s\r\n", buffer.c_str()));
 
   // iterate buffer to parse by ',' that are not inside " "
   std::string::iterator itStart = buffer.begin();
@@ -154,20 +154,20 @@ void TJsonParser::ParseString()
   bool fFinish = false;
   for(std::string::iterator it=buffer.begin(); it!=buffer.end(); ++it)
   {
-    //debug(("-> Data: %c\r\n", *it));
+    debug(("-> Data: %c\r\n", *it));
 
     // verify internal json element: "a":{"internal":"data"}
     if(*it == '{')
     {
       ipropcounter++;
-      //debug(("Internal Property Counter = %d\r\n", ipropcounter));
+      debug(("Internal Property Counter = %d\r\n", ipropcounter));
     }
     if(*it == '}')
     {
       ipropcounter--;
       if(ipropcounter < 0)
         ipropcounter = 0;
-      //debug(("Internal Property Counter = %d\r\n", ipropcounter));
+      debug(("Internal Property Counter = %d\r\n", ipropcounter));
     }
 
     if(!fStart && !fFind && !fFinish && ipropcounter == 0)
@@ -175,27 +175,27 @@ void TJsonParser::ParseString()
       // Start
       itStart = it;
       fStart = true;
-      //debug(("Found Start: %c\r\n", *it));
+      debug(("Found Start: %c\r\n", *it));
     }
     if(fStart && !fFind && !fFinish && *it == ':' && ipropcounter == 0)
     {
       // Property separator ':'
       itFind = it;
       fFind = true;
-      //debug(("Found Separator: %c\r\n", *it));
+      debug(("Found Separator: %c\r\n", *it));
     }
-    if(fStart && fFind && !fFinish && ipropcounter == 0 && (*it == ',' || (it+1)==buffer.end()))
+    if(fStart && fFind && !fFinish && ipropcounter == 0 && (*it == ',' || *it == '}' || (it+1)==buffer.end()))
     {
       // Finish
       itFinish = it;
       fFinish = true;
-      //debug(("Found Finish: %c\r\n", *it));
+      debug(("Found Finish: %c\r\n", *it));
     }
 
     // found Start + Find + Finish
     if(fStart && fFind && fFinish && ipropcounter == 0)
     {
-      //debug(("Parsing JSON property:value ...\r\n"));
+      debug(("Parsing JSON property:value ...\r\n"));
 
       fStart = false;
       fFind = false;
@@ -208,7 +208,7 @@ void TJsonParser::ParseString()
         jsonprop.push_back(*itStart);
         itStart++;
       }
-      //debug(("JSON Property: %s\r\n", jsonprop.c_str()));
+      debug(("JSON Property: %s\r\n", jsonprop.c_str()));
 
       // extract JSON value
       std::string jsonvalue;
@@ -220,16 +220,16 @@ void TJsonParser::ParseString()
       }
       if((itStart+1) == buffer.end())
       {
-        //debug(("Special case, end of parsing\r\n"));
+        debug(("Special case, end of parsing\r\n"));
         jsonvalue.push_back(*itStart);
       }
-      //debug(("JSON Value: %s\r\n", jsonvalue.c_str()));
+      debug(("JSON Value: %s\r\n", jsonvalue.c_str()));
 
       itStart = it;
       itFind = it;
       itFinish = it;
 
-      //debug(("JSONELEMENT[%s]=%s\r\n", jsonprop.c_str(), jsonvalue.c_str()));
+      debug(("JSONELEMENT[%s]=%s\r\n", jsonprop.c_str(), jsonvalue.c_str()));
 
       // create new JSON Element object
       TJsonElement *pJsonElement = new TJsonElement(jsonprop.c_str(), jsonvalue.c_str());
@@ -237,7 +237,7 @@ void TJsonParser::ParseString()
       vDataJsonElement.push_back(pJsonElement);
     }
   }
-  //DisplayVectorData();
+  DisplayVectorData();
 }
 //---------------------------------------------------------------------------------------------
 

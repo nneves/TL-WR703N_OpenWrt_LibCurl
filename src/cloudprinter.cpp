@@ -121,6 +121,7 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
   //printf("Received data: %d\r\n", size*nmemb);
   //printf("--> %s\r\n", ((char *)ptr));
 
+  /*
   char *pdata = (char *)ptr;
 
   if( size*nmemb > 13 &&
@@ -144,6 +145,30 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
   else
   {
     printf(".");
+  }
+  */
+  
+  char *pdata = (char *)ptr;
+  std::string strdata;
+  strdata = std::string(pdata);
+
+  std::size_t found = strdata.find("\"printercmd\"");
+  if(found != std::string::npos)
+  {
+    printf("--> %s", strdata.c_str());
+
+    TJsonParser *pJsonParser = new TJsonParser(strdata.c_str());
+    std::string result;
+    result = pJsonParser->Prop("printercmd")->Value();
+
+    printf("-->--> %s\n", result.c_str());
+
+    delete pJsonParser;
+    pJsonParser = NULL;     
+  }
+  else
+  {
+    //printf(".\r\n");
   }
 
   return size*nmemb;
@@ -209,7 +234,7 @@ int main(void)
   //---------------------------------------------------------------------------------------
   // test jsonparser
   //---------------------------------------------------------------------------------------
-  test_jsonparser();
+  //test_jsonparser();
 
   signal(SIGTERM, cleanup);
   signal(SIGINT, cleanup);
