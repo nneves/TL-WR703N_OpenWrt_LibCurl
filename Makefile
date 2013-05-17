@@ -36,13 +36,13 @@ export SIZE=$(TOOLCHAIN)/mips-openwrt-linux-uclibc-size
 #LDFLAGS += -Wl,-rpath-link,$(STAGING_DIR)/usr/lib:$(STAGING_DIR)/lib,-lcurl,-lxml2,-lz,-lssl
 
 
-STATICLINKLIBS=-ldl -lcurl -lz -lssl -lcrypto -lpthread -nodefaultlibs -lgcc -lc -luClibc++
+STATICLINKLIBS=-ldl -lcurl -lz -lssl -lcrypto -lpthread -lstdc++
 STATICLINKPATH=libs/library
 INCLUDEDIR=libs/curl
 
 export CFLAGS=-g -Wall -pedantic -DDEBUG -D_REENTRANT -D_BSD_SOURCE -std=gnu99
 export CCFLAGS=-g -Wall -pedantic -DDEBUG -D_REENTRANT -D_BSD_SOURCE
-export CXXFLAGS=-g -Wall -pedantic -DDEBUG -D_REENTRANT -D_BSD_SOURCE -std=c++0x -nostdinc++
+export CXXFLAGS=-g -Wall -pedantic -DDEBUG -D_REENTRANT -D_BSD_SOURCE -std=c++0x
 export LDFLAGS=-g -Wall -pedantic -DDEBUG -D_REENTRANT -D_BSD_SOURCE
 
 #export CDEFS=-DNDEBUG
@@ -73,7 +73,7 @@ OBJECTS=$(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
  
 $(TARGET): $(LOBJECTS) $(OBJECTS)
 	@echo " Linking...$(TARGET)";
-	$(CXX) $^ -o $(TARGET) $(LDFLAGS) -Wl,-rpath-link,libs/library/,-ldl,-lcurl,-lz,-lssl,-lcrypto,-lpthread -L $(STATICLINKPATH) $(STATICLINKLIBS) 
+	$(CXX) $^ -o $(TARGET) $(LDFLAGS) -Wl,-rpath-link,libs/library/,-ldl,-lcurl,-lz,-lssl,-lcrypto,-lpthread,-lstdc++ -L $(STATICLINKPATH) $(STATICLINKLIBS) 
 
 # $< = libs/File.cpp
 # $@ = libs/File.o
