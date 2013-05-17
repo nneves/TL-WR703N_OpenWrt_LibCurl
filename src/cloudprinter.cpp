@@ -121,7 +121,8 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
 
 
 //---------------------------------------------------------------------------------------
-void *ThreadCurlRequest(void)
+
+static void *ThreadCurlRequest(void *arg)
 {
   printf("Init. Thread\n");
   curl_global_init(CURL_GLOBAL_ALL);

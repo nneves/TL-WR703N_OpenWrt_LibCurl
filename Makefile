@@ -4,8 +4,9 @@
 LSRCDIR=libs
 SRCDIR=src
 BUILDDIR=build
-SRCEXT=c
-TARGET=simpledemo
+#SRCEXT=c
+SRCEXT=cpp
+TARGET=cloudprintercli
 
 #----------------------------------------------------
 # OpenWrt cross-compile
@@ -71,19 +72,19 @@ LOBJECTS=$(patsubst $(LSRCDIR)/%,$(BUILDDIR)/%,$(LSOURCES:.$(SRCEXT)=.o))
 OBJECTS=$(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
  
 $(TARGET): $(LOBJECTS) $(OBJECTS)
-	@echo " Linking...$(TARGET)"; $(CC) $^ -o $(TARGET) $(LDFLAGS) -Wl,-rpath-link,libs/library/,-ldl,-lcurl,-lz,-lssl,-lcrypto,-lpthread -L $(STATICLINKPATH) $(STATICLINKLIBS) 
+	@echo " Linking...$(TARGET)"; $(CXX) $^ -o $(TARGET) $(LDFLAGS) -Wl,-rpath-link,libs/library/,-ldl,-lcurl,-lz,-lssl,-lcrypto,-lpthread -L $(STATICLINKPATH) $(STATICLINKLIBS) 
 
 # $< = libs/File.cpp
 # $@ = libs/File.o
 $(BUILDDIR)/%.o: $(LSRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
-	@echo " CC $<"; $(CC) -I $(LSRCDIR) -I $(INCLUDEDIR) $(CFLAGS) -c $< -o $@
+	@echo " CXX $<"; $(CC) -I $(LSRCDIR) -I $(INCLUDEDIR) $(CXXFLAGS) -c $< -o $@
 
 # $< = src/File.cpp
 # $@ = src/File.o
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
-	@echo " CC $<"; $(CC) -I $(LSRCDIR) -I $(INCLUDEDIR) $(CFLAGS) -c $< -o $@
+	@echo " CXX $<"; $(CC) -I $(LSRCDIR) -I $(INCLUDEDIR) $(CXXFLAGS) -c $< -o $@
 
 deploy:
 	@scp ./$(TARGET) root@192.168.1.250:/mnt/usbstorage/;
