@@ -52,7 +52,9 @@
 #define BAUDRATE1 B4800
 #define BAUDRATE2 B38400
 #define BAUDRATE3 B57600
-#define MODEMDEVICE "/dev/ttyS0"
+#define BAUDRATE4 B115200
+#define BAUDRATE5 B230400
+#define MODEMDEVICE "/dev/ttyACM0"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 //-----------------------------------------------------------------------------------------
 #define FALSE 0
@@ -76,6 +78,8 @@ short int debugmode;
 //-----------------------------------------------------------------------------------------
 CURL *curl;
 CURLcode res;
+//-----------------------------------------------------------------------------------------
+static volatile int *fdSerialPort = NULL;
 //-----------------------------------------------------------------------------------------
 
 void cleanup(int sig)
@@ -117,37 +121,7 @@ void test_jsonparser()
 }
 
 size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
-{
-  //printf("Received data: %d\r\n", size*nmemb);
-  //printf("--> %s\r\n", ((char *)ptr));
-
-  /*
-  char *pdata = (char *)ptr;
-
-  if( size*nmemb > 13 &&
-    *(pdata+0) == '{' && 
-    *(pdata+1) == '\"' &&
-    *(pdata+2) == 'p' &&
-    *(pdata+3) == 'r' &&
-    *(pdata+4) == 'i' &&
-    *(pdata+5) == 'n' &&
-    *(pdata+6) == 't' &&
-    *(pdata+7) == 'e' &&
-    *(pdata+8) == 'r' &&
-    *(pdata+9) == 'c' &&
-    *(pdata+10) == 'm' &&
-    *(pdata+11) == 'd' &&
-    *(pdata+12) == '\"' &&
-    *(pdata+13) == ':')
-  {
-    printf("--> %s\r\n", ((char *)ptr));
-  }
-  else
-  {
-    printf(".");
-  }
-  */
-  
+{  
   char *pdata = (char *)ptr;
   std::string strdata;
   strdata = std::string(pdata);
@@ -163,6 +137,12 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
 
     printf("-->--> %s\n", result.c_str());
 
+    printf("Writing to Serial Port!\n");
+
+    //tcflush(*fdSerialPort, TCIOFLUSH); // clear buffer
+    write(*fdSerialPort, result.c_str(), result.length());
+    //tcflush(*fdSerialPort, TCIOFLUSH); // clear buffer
+
     delete pJsonParser;
     pJsonParser = NULL;     
   }
@@ -173,9 +153,6 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
 
   return size*nmemb;
 }
-
-
-
 //---------------------------------------------------------------------------------------
 
 static void *ThreadCurlRequest(void *arg)
@@ -259,7 +236,7 @@ int main(void)
   tcgetattr(fd,&oldtio); 
   //---------------------------------------------------------------------------------------
   // open serial port
-  fd = open(MODEMDEVICE, O_RDWR | O_NOCTTY );
+  fd = open(MODEMDEVICE, O_RDWR | O_NOCTTY | O_NDELAY);
   if(fd<0) 
   {
     printf("Error: open serial port\r\n");
@@ -270,17 +247,19 @@ int main(void)
   // setting serial port configurations
   //bzero(&newtio, sizeof(newtio));
   memset(&newtio, 0, sizeof(newtio));
-  newtio.c_cflag = BAUDRATE2 | CRTSCTS | CS8 | CLOCAL | CREAD;
+  newtio.c_cflag = BAUDRATE4 | CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
   newtio.c_oflag = 0;   
-  newtio.c_lflag = 0;          // set input mode (non-canonical, no echo,...)
+  newtio.c_lflag = ICANON;          // set input mode (non-canonical, no echo,...)
   newtio.c_cc[VTIME]    = 0;   // inter-character timer unused
   newtio.c_cc[VMIN]     = 1;   // blocking read until x chars received
   tcflush(fd, TCIFLUSH);
-  tcsetattr(fd,TCSANOW,&newtio); 
+  tcsetattr(fd,TCSANOW,&newtio);
+  //tcflush(fd, TCIFLUSH); 
   //---------------------------------------------------------------------------------------
   //write(fd, "Starting GPS Parser!", 20);
   //---------------------------------------------------------------------------------------
+  fdSerialPort = &fd;
 
 
   //---------------------------------------------------------------------------------------
@@ -300,6 +279,8 @@ int main(void)
 
 //printf("[%c]",temp_buf[0]);
 //printf("[%x]",temp_buf[0]);
+  if(temp_buf[0] != 0x0a && temp_buf[0] != 0)
+    printf("%c", temp_buf[0]);
 
 
 
@@ -323,6 +304,7 @@ int main(void)
 
   }// end while - main loop
   //---------------------------------------------------------------------------------------
+  printf("Exit mainloop\n");
 
   //---------------------------------------------------------------------------------------
   // close serial port
