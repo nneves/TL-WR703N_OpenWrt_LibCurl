@@ -1,1 +1,1 @@
-Makefile.OpenWrt
+Makefile.Linux

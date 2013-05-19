@@ -72,8 +72,7 @@ void PERROR(char* msg);
 #define MAXBUF  4096
 char buffer[MAXBUF];
 //-----------------------------------------------------------------------------------------
-static volatile int fd = 0;
-static volatile int *fdSerialPort = &fd; // fdSerialPort = &fd;
+volatile int fd = 0;
 static volatile int exec_end = FALSE;
 //-----------------------------------------------------------------------------------------
 CURL *curl;
@@ -86,6 +85,9 @@ void cleanup(int sig)
   exec_end = TRUE;
   // close serial port
   close(fd);
+  // close CURL
+  curl_easy_cleanup(curl);
+
   return;
 }
 //-----------------------------------------------------------------------------------------
@@ -131,15 +133,14 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
     printf("--> %s", strdata.c_str());
 
     TJsonParser *pJsonParser = new TJsonParser(strdata.c_str());
-    std::string result;
-    result = pJsonParser->Prop("printercmd")->Value();
+    std::string result = pJsonParser->Prop("printercmd")->Value();
 
     printf("-->--> %s\n", result.c_str());
 
     printf("Writing to Serial Port!\n");
 
     //tcflush(*fdSerialPort, TCIOFLUSH); // clear buffer
-    write(*fdSerialPort, result.c_str(), result.length());
+    write(fd, result.c_str(), result.length());
     //tcflush(*fdSerialPort, TCIOFLUSH); // clear buffer
 
     delete pJsonParser;
@@ -310,31 +311,26 @@ printf("%c",temp_buf[0]);
     printf("Send Printer cmd: %s\r\n", cmd.c_str());
     write(fd, cmd.c_str(), cmd.length());
   }
-
-  if(printerackcounter == 3*2) // 3rd cmd
+  else if(printerackcounter == 3*2) // 3rd cmd
   {
     std::string cmd = "G1 X10 Y20 F8000\n";
     printf("Send Printer cmd: %s\r\n", cmd.c_str());
     write(fd, cmd.c_str(), cmd.length());
   }  
+  else if(printerackcounter == 3*3) // 4th cmd
+  {
+    std::string cmd = "G91\n";
+    printf("Send Printer cmd: %s\r\n", cmd.c_str());
+    write(fd, cmd.c_str(), cmd.length());
+  }   
+  else if(printerackcounter == 3*4) // 5th cmd
+  {
+    iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
+    
+    pthread_join( thread1, NULL);
 
-    // verify if gps command is completed ($......\n\n or \r\n)
-    // (this point flag_start_cmd is always TRUE)
-    // (just need to test if flag_end_cmd is FALSE)
-/*
-    if(flag_end_cmd == FALSE)
-    {
-      ptr_endcmd1=strstr(buffer,"\r");
-      ptr_endcmd2=strstr(buffer,"\n");      
-
-      if(ptr_endcmd1!=NULL || ptr_endcmd2!=NULL)
-      {
-        printf("found_complete_command\r\n");
-
-        flag_end_cmd = TRUE;
-      }
-    }  
-*/    
+    printf("Thread 1 returns: %d\n",iret1);
+  }
 
   }// end while - main loop
   //---------------------------------------------------------------------------------------

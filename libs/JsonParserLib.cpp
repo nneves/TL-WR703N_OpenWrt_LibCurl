@@ -7,7 +7,6 @@
 //---------------------------------------------------------------------------------------------
 // Enable/Disable printf debug (avoid sending data to USB Serial Port when not required)
 #if 0
-//#if 1
   #define debug(a) printf a
 #else
   #define debug(a) (void)0
