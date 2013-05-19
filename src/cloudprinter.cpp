@@ -221,14 +221,14 @@ int main(void)
   // launch thread APIs (extra interfaces)
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
-  iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
+  //iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */
   /* the process and all threads before the threads have completed.   */
   //pthread_join( thread1, NULL);
 
-  printf("Thread 1 returns: %d\n",iret1);
+  //printf("Thread 1 returns: %d\n",iret1);
   //---------------------------------------------------------------------------------------
   
   //---------------------------------------------------------------------------------------
@@ -236,7 +236,7 @@ int main(void)
   tcgetattr(fd,&oldtio); 
   //---------------------------------------------------------------------------------------
   // open serial port
-  fd = open(MODEMDEVICE, O_RDWR | O_NOCTTY | O_NDELAY);
+  fd = open(MODEMDEVICE, O_RDWR | O_NOCTTY);
   if(fd<0) 
   {
     printf("Error: open serial port\r\n");
@@ -264,6 +264,10 @@ int main(void)
 
   //---------------------------------------------------------------------------------------
   // serial port main loop
+  char trigger[]="echo:SD init fail";
+  char *ptrigger = &trigger[0];
+  bool printerinit = false;
+  int printerackcounter = 0;
   while(exec_end==FALSE) 
   { 
     // loop for input
@@ -277,12 +281,37 @@ int main(void)
       break;
     }
 
-//printf("[%c]",temp_buf[0]);
+printf("%c",temp_buf[0]);
 //printf("[%x]",temp_buf[0]);
-  if(temp_buf[0] != 0x0a && temp_buf[0] != 0)
-    printf("%c", temp_buf[0]);
+//  if(temp_buf[0] != 0x0a && temp_buf[0] != 0)
+//    printf("%c", temp_buf[0]);
+
+  if(printerinit)
+    printerackcounter++; // count 3 response chars : OK\n
 
 
+  if(temp_buf[0] == *ptrigger)
+    ptrigger++; // increment pointer
+  else 
+    ptrigger = &trigger[0]; // reset pointer
+
+  if(*ptrigger == '\0')
+  {
+    printerinit = true;
+    ptrigger = &trigger[0];
+    printf("\r\nFound Printer Init. END\r\n");
+
+    std::string cmd = "G28\n";
+    printf("Send Printer cmd: %s\r\n", cmd.c_str());
+    write(fd, cmd.c_str(), cmd.length());
+  }
+
+  if(printerackcounter == 3) // 2nd cmd
+  {
+    std::string cmd = "G1 X0 Y0 Z50 F8000\n";
+    printf("Send Printer cmd: %s\r\n", cmd.c_str());
+    write(fd, cmd.c_str(), cmd.length());
+  }
 
     // verify if gps command is completed ($......\n\n or \r\n)
     // (this point flag_start_cmd is always TRUE)
