@@ -1,0 +1,68 @@
+#----------------------------------------------------
+# Generic Makefile for compiling a simple executable.
+#----------------------------------------------------
+LSRCDIR=libs
+SRCDIR=src
+BUILDDIR=build
+#SRCEXT=c
+SRCEXT=cpp
+TARGET=cloudprintercli
+
+#----------------------------------------------------
+export LD=ld 
+export NM=nm 
+export CC=gcc
+export GCC=gcc
+export CXX=g++
+export RANLIB=ranlib 
+export STRIP=strip
+export OBJCOPY=objcopy
+export OBJDUMP=objdump 
+export SIZE=size 
+#export CFLAGS=-std=gnu99 -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -fhonour-copts -msoft-float -DARGTYPE=3 -ffunction-sections -fdata-sections 
+#export CXXFLAGS=-std=c++0x -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -fhonour-copts -msoft-float -DARGTYPE=3 -ffunction-sections -fdata-sections 
+#export CPPFLAGS=-I${TOOLCHAIN}/../usr/include -I${TOOLCHAIN}/../include 
+#export LDFLAGS=-L${TOOLCHAIN}/../usr/lib -L${TOOLCHAIN}/../lib -Wl,--gc-sections -Wl,-rpath,${TOOLCHAIN}/../lib -Wl,-s
+#LDFLAGS += -Wl,-rpath-link,$(STAGING_DIR)/usr/lib:$(STAGING_DIR)/lib,-lcurl,-lxml2,-lz,-lssl
+
+STATICLINKLIBS=-ldl -lcurl -lz -lssl -lcrypto -lpthread -lstdc++
+STATICLINKPATH=libs/library/
+INCLUDEDIR=/usr/include/
+
+export CFLAGS=-g -Wall -pedantic -DDEBUG -D_REENTRANT -D_BSD_SOURCE -std=gnu99
+export CCFLAGS=-g -Wall -pedantic -DDEBUG -D_REENTRANT -D_BSD_SOURCE
+export CXXFLAGS=-g -Wall -pedantic -DDEBUG -D_REENTRANT -D_BSD_SOURCE -std=c++0x
+export LDFLAGS=-g -Wall -pedantic -DDEBUG -D_REENTRANT -D_BSD_SOURCE
+
+#export CDEFS=-DNDEBUG
+
+#----------------------------------------------------
+
+LSOURCES=$(shell find $(LSRCDIR) -type f -name *.$(SRCEXT))
+SOURCES=$(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+
+LOBJECTS=$(patsubst $(LSRCDIR)/%,$(BUILDDIR)/%,$(LSOURCES:.$(SRCEXT)=.o))
+OBJECTS=$(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
+ 
+$(TARGET): $(LOBJECTS) $(OBJECTS)
+	@echo " Linking...$(TARGET)";
+	$(CXX) $^ -o $(TARGET) $(LDFLAGS) $(STATICLINKLIBS) 
+
+# $< = libs/File.cpp
+# $@ = libs/File.o
+$(BUILDDIR)/%.o: $(LSRCDIR)/%.$(SRCEXT)
+	@mkdir -p $(BUILDDIR)
+	@echo " CXX $<"; $(CC) -I $(LSRCDIR) -I $(INCLUDEDIR) $(CXXFLAGS) -c $< -o $@
+
+# $< = src/File.cpp
+# $@ = src/File.o
+$(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
+	@mkdir -p $(BUILDDIR)
+	@echo " CXX $<"; $(CC) -I $(LSRCDIR) -I $(INCLUDEDIR) $(CXXFLAGS) -c $< -o $@
+
+deploy:
+	@scp ./$(TARGET) root@192.168.1.250:/mnt/usbstorage/;
+clean:
+	@echo " Cleaning..."; $(RM) -r $(BUILDDIR) $(TARGET)
+ 
+.PHONY: clean
