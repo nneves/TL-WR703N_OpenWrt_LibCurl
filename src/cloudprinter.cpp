@@ -72,21 +72,20 @@ void PERROR(char* msg);
 #define MAXBUF  4096
 char buffer[MAXBUF];
 //-----------------------------------------------------------------------------------------
+static volatile int fd = 0;
+static volatile int *fdSerialPort = &fd; // fdSerialPort = &fd;
 static volatile int exec_end = FALSE;
-//-----------------------------------------------------------------------------------------
-short int debugmode;
 //-----------------------------------------------------------------------------------------
 CURL *curl;
 CURLcode res;
 //-----------------------------------------------------------------------------------------
-static volatile int *fdSerialPort = NULL;
-//-----------------------------------------------------------------------------------------
 
 void cleanup(int sig)
 {
-  if(debugmode)
-    printf("recieved signal %d\n", sig);
+  printf("recieved signal %d\n", sig);
   exec_end = TRUE;
+  // close serial port
+  close(fd);
   return;
 }
 //-----------------------------------------------------------------------------------------
@@ -199,7 +198,7 @@ int main(void)
   //---------------------------------------------------------------------------------------
   // variables for serial port communication
   //---------------------------------------------------------------------------------------
-  int fd = 0;
+  //int fd = 0;
   int res = 0;
   struct termios oldtio,newtio;
   //---------------------------------------------------------------------------------------
@@ -259,7 +258,6 @@ int main(void)
   //---------------------------------------------------------------------------------------
   //write(fd, "Starting GPS Parser!", 20);
   //---------------------------------------------------------------------------------------
-  fdSerialPort = &fd;
 
 
   //---------------------------------------------------------------------------------------
@@ -306,12 +304,19 @@ printf("%c",temp_buf[0]);
     write(fd, cmd.c_str(), cmd.length());
   }
 
-  if(printerackcounter == 3) // 2nd cmd
+  if(printerackcounter == 3*1) // 2nd cmd
   {
-    std::string cmd = "G1 X0 Y0 Z50 F8000\n";
+    std::string cmd = "G1 X0 Y0 Z10 F6000\n";
     printf("Send Printer cmd: %s\r\n", cmd.c_str());
     write(fd, cmd.c_str(), cmd.length());
   }
+
+  if(printerackcounter == 3*2) // 3rd cmd
+  {
+    std::string cmd = "G1 X10 Y20 F8000\n";
+    printf("Send Printer cmd: %s\r\n", cmd.c_str());
+    write(fd, cmd.c_str(), cmd.length());
+  }  
 
     // verify if gps command is completed ($......\n\n or \r\n)
     // (this point flag_start_cmd is always TRUE)
