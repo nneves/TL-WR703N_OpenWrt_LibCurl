@@ -1,65 +1,56 @@
-#ifndef __JSONPARSERLIBH
-#define __JSONPARSERLIBH
+#ifndef __CONTAINERLIBH
+#define __CONTAINERLIBH
 //---------------------------------------------------------------------------------------------
-// JSON Parser Lib class (basic parser)
+// CONTAINER Library
 //---------------------------------------------------------------------------------------------
 // Author:    Nelson Neves
 // Contact:   nelson.s.neves@gmail.com / www.botdream.com
-// Date:      15-Apr-2013
-// Objective: micro-nano-pico JSON Parser C++ Lib with std::string, std::vector support (WIP)
+// Date:      28-May-2013
+// Objective: Container List using Vector
 //
-// TODO: Array support not yet implemented
-// TODO: Currently only returns strings values
 //---------------------------------------------------------------------------------------------
 #include <vector>
 #include <string>
 //---------------------------------------------------------------------------------------------
-class TJsonParser;
-class TJsonElement;
+class TContainerList;
+class TContainerElement;
 //---------------------------------------------------------------------------------------------
 
-class TJsonElement
+class TContainerElement
 {
   //-------------------------------------------------------------------------------------------
   private:
   //-------------------------------------------------------------------------------------------
-  std::string property;
-  std::string value;
-  bool fvaluejson;
-  TJsonParser *pvaluejson;
+  int uuid;
+  std::string strdata;
 
   //-------------------------------------------------------------------------------------------
   public:
   //-------------------------------------------------------------------------------------------
-  TJsonElement(const char *pProp, const char *pValue);
-  ~TJsonElement();
+  TContainerElement(int iuuid, const char *pstrdata);
+  ~TContainerElement();
 
-  std::string Prop();
-  std::string Value();
-  bool IsValueJSON();
-  TJsonParser *ValueJson();
-  TJsonElement* Prop(const char *pPropName);
+  int GetID();
+  const char *GetData();
 };
 //---------------------------------------------------------------------------------------------
 
-class TJsonParser
+class TContainerList
 {
   //-------------------------------------------------------------------------------------------
   private:
   //-------------------------------------------------------------------------------------------
-  std::vector<TJsonElement*>vDataJsonElement; // Vector container for the JSON Element
+  std::vector<TContainerElement*>vDataContainerElement; // Vector container for the Container Element
   std::string buffer;
-
-  void ParseString();
-  void DisplayVectorData();
 
   //-------------------------------------------------------------------------------------------
   public:
   //-------------------------------------------------------------------------------------------
-  TJsonParser(const char *pBuffer);
-  ~TJsonParser();
+  TContainerList();
+  ~TContainerList();
 
-  TJsonElement* Prop(const char *pPropName);
+  void AddElement(int iuuid, const char *pstrdata);
+  void DisplayVectorData();  
 };
 //---------------------------------------------------------------------------------------------
 #endif

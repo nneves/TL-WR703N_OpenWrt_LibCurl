@@ -46,6 +46,7 @@
 #include <string.h> // strncpy strnstr strcmp
 #include <signal.h>
 //-----------------------------------------------------------------------------------------
+#include "ContainerLib.h"
 #include "JsonParserLib.h"
 #include "SerialPortLib.h"
 //-----------------------------------------------------------------------------------------
@@ -108,6 +109,19 @@ void test_jsonparser()
 
   delete pJsonParser;
   pJsonParser = NULL;  
+}
+
+void test_containerlist()
+{
+  TContainerList *contlist = new TContainerList();
+
+  contlist->AddElement(1, "ABC");
+  contlist->AddElement(2, "DEF");
+
+  contlist->DisplayVectorData();
+
+  delete contlist;
+  contlist = NULL;
 }
 
 size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
@@ -193,6 +207,12 @@ int main(void)
   //---------------------------------------------------------------------------------------
   char temp_buf[2];
   //char str[1024];
+
+
+  //---------------------------------------------------------------------------------------
+  // test containerlist
+  //---------------------------------------------------------------------------------------
+  //test_containerlist();
 
   //---------------------------------------------------------------------------------------
   // test jsonparser
