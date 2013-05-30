@@ -48,6 +48,8 @@ const char *TContainerElement::GetData()
 TContainerList::TContainerList()
 {
   debug(("Calling TContainerList Contructor\r\n"));
+
+  autouuid = 0;
 }
 //---------------------------------------------------------------------------------------------
 // destructor
@@ -69,7 +71,15 @@ TContainerList::~TContainerList()
 //---------------------------------------------------------------------------------------------
 // private function
 //---------------------------------------------------------------------------------------------
-void TContainerList::AddElement(int iuuid, const char *pstrdata)
+
+void TContainerList::AddElement(const char *pstrdata)
+{
+  autouuid++;
+  AddElementID(autouuid, pstrdata);
+}
+//---------------------------------------------------------------------------------------------
+
+void TContainerList::AddElementID(int iuuid, const char *pstrdata)
 {
 
   // create new Container Element object
@@ -78,6 +88,33 @@ void TContainerList::AddElement(int iuuid, const char *pstrdata)
   vDataContainerElement.push_back(pContainerElement);
 
   DisplayVectorData();
+}
+//---------------------------------------------------------------------------------------------
+
+std::string TContainerList::PopFirstElement()
+{
+  std::string result;
+
+  if(vDataContainerElement.size() <= 0)
+    return result;
+
+  debug(("Erase Vector Element\n"));
+  std::vector<TContainerElement*>::iterator it = vDataContainerElement.begin();
+  result = ((*it)->GetData());
+  debug(("Erase Vector Element\n"));
+  delete *it;
+  *it = NULL;  
+  debug(("Erase Vector Indice\n"));
+  vDataContainerElement.erase(vDataContainerElement.begin());
+  debug(("Completed Vector Erase\n"));
+  
+  return result;
+}
+//---------------------------------------------------------------------------------------------
+
+int TContainerList::Count()
+{
+  return vDataContainerElement.size();
 }
 //---------------------------------------------------------------------------------------------
 

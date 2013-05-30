@@ -51,7 +51,7 @@ TSerialPort::TSerialPort()
   tcgetattr(fd,&oldtio); 
   //---------------------------------------------------------------------------------------
   // open serial port
-  fd = open(MODEMDEVICE, O_RDWR | O_NOCTTY);
+  fd = open(MODEMDEVICE, O_RDWR | O_NOCTTY /*| O_NDELAY*/);
   if(fd<0) 
   {
     debug(("Error: open serial port\r\n"));
@@ -113,9 +113,9 @@ char TSerialPort::ReadDataChar()
 //---------------------------------------------------------------------------------------------
 // Public functions
 //---------------------------------------------------------------------------------------------
-int TSerialPort::GetFD()
+int *TSerialPort::GetFD()
 {
-  return fd;
+  return &fd;
 }
 //---------------------------------------------------------------------------------------------
 
@@ -141,6 +141,27 @@ bool TSerialPort::ReadDataLine()
 std::string TSerialPort::GetDataLine()
 {
   return cmddata;
+}
+//---------------------------------------------------------------------------------------------
+
+void TSerialPort::WriteDataLine(std::string cmd)
+{
+  //tcflush(fd, TCIOFLUSH); // clear buffer
+  write(fd, cmd.c_str(), cmd.length());  
+
+/*
+    std::string cmd1 = "G28\n";
+    printf("Send Printer cmd: %s\r\n", cmd1.c_str());
+    write(fd, cmd1.c_str(), cmd1.length());
+
+  tcflush(fd, TCIOFLUSH); // clear buffer
+
+    cmd1 = "G1 X10 Y20 F8000\n";
+    printf("Send Printer cmd: %s\r\n", cmd1.c_str());
+    write(fd, cmd1.c_str(), cmd1.length());    
+
+  tcflush(fd, TCIOFLUSH); // clear buffer
+  */
 }
 //---------------------------------------------------------------------------------------------
 

@@ -46,16 +46,22 @@
 #include <string.h> // strncpy strnstr strcmp
 #include <signal.h>
 //-----------------------------------------------------------------------------------------
+//#include <string>
+//-----------------------------------------------------------------------------------------
 #include "ContainerLib.h"
 #include "JsonParserLib.h"
 #include "SerialPortLib.h"
 //-----------------------------------------------------------------------------------------
 volatile bool terminate = false;
 //-----------------------------------------------------------------------------------------
+// Thread
+int iret1, iret2;
+//-----------------------------------------------------------------------------------------
 CURL *curl;
 CURLcode res;
 //-----------------------------------------------------------------------------------------
-TSerialPort *spInterface;
+TSerialPort *spInterface = NULL;
+TContainerList *cList = NULL;
 //-----------------------------------------------------------------------------------------
 // Enable/Disable printf debug (avoid sending data to USB Serial Port when not required)
 #if 1
@@ -115,8 +121,10 @@ void test_containerlist()
 {
   TContainerList *contlist = new TContainerList();
 
-  contlist->AddElement(1, "ABC");
-  contlist->AddElement(2, "DEF");
+  contlist->AddElementID(1, "ABC");
+  contlist->AddElementID(2, "DEF");
+
+  contlist->AddElement("AUTODATA");
 
   contlist->DisplayVectorData();
 
@@ -133,19 +141,23 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
   std::size_t found = strdata.find("\"printercmd\"");
   if(found != std::string::npos)
   {
-    printf("--> %s", strdata.c_str());
+    debug(("--> %s", strdata.c_str()));
 
     TJsonParser *pJsonParser = new TJsonParser(strdata.c_str());
     std::string result = pJsonParser->Prop("printercmd")->Value();
 
-    printf("-->--> %s\n", result.c_str());
+    debug(("-->--> %s\n", result.c_str()));
 
+    // add cmd to ContainerList
+    cList->AddElement(result.c_str());
+
+/*
     printf("Writing to Serial Port!\n");
 
     //tcflush(spInterface->GetFD(), TCIOFLUSH); // clear buffer
     write(spInterface->GetFD(), result.c_str(), result.length());
     //tcflush(spInterface->GetFD(), TCIOFLUSH); // clear buffer
-
+*/
     delete pJsonParser;
     pJsonParser = NULL;     
   }
@@ -188,7 +200,8 @@ static void *ThreadCurlRequest(void *arg)
     curl_easy_cleanup(curl);
   }
   debug(("Leaving Thread\n"));
-  return NULL;  
+  pthread_exit(&iret1);
+  //return NULL;  
 }
 //---------------------------------------------------------------------------------------
 
@@ -198,9 +211,10 @@ int main(void)
   // variables for threads
   //---------------------------------------------------------------------------------------
   pthread_t thread1, thread2;
-  int  iret1, iret2;
+  //int  iret1, iret2;
   //---------------------------------------------------------------------------------------
   spInterface = new TSerialPort();
+  cList = new TContainerList();
 
   //---------------------------------------------------------------------------------------
   // aux variables for serial data parsing and grouping
@@ -227,28 +241,41 @@ int main(void)
   // launch thread APIs (extra interfaces)
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
-  //iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
+  iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */
   /* the process and all threads before the threads have completed.   */
   //pthread_join( thread1, NULL);
 
-  //debug(("Thread 1 returns: %d\n",iret1));
+  debug(("Thread 1 returns: %d\n",iret1));
   //---------------------------------------------------------------------------------------
   
  
   //---------------------------------------------------------------------------------------
   // main loop
   std::string result;
+  std::string cmd;
+
+  //tcflush(*spInterface->GetFD(), TCIOFLUSH); // clear buffer
+
   while(!terminate) 
   { 
-    if(spInterface->ReadDataLine())
+    // wirte data to printer
+    if(cList->Count() > 0)
+    {
+      cmd = cList->PopFirstElement();
+
+      debug(("Writing to Serial Port: %s\n", cmd.c_str()));
+
+      spInterface->WriteDataLine(cmd);
+    }
+
+    if(false && spInterface->ReadDataLine())
     {
       result = spInterface->GetDataLine();
-      printf("%s\n", result.c_str());
-    }
-    
+      debug(("%s\n", result.c_str()));
+    }    
   }// end while - main loop
   //---------------------------------------------------------------------------------------
   debug(("Exit mainloop\n"));
@@ -259,6 +286,13 @@ int main(void)
   {
     delete spInterface;
     spInterface = NULL;
+  }
+
+  if(cList)
+  {
+    cList->DisplayVectorData();
+    delete cList;
+    cList = NULL;    
   }
   //---------------------------------------------------------------------------------------
   

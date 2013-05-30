@@ -38,9 +38,10 @@ class TSerialPort
   TSerialPort();
   ~TSerialPort();
 
-  int GetFD();
+  int *GetFD();
   bool ReadDataLine();
   std::string GetDataLine();
+  void WriteDataLine(std::string cmd);
   void TestPrinterGCODE();
 
 };

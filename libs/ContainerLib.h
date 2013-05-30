@@ -42,6 +42,7 @@ class TContainerList
   //-------------------------------------------------------------------------------------------
   std::vector<TContainerElement*>vDataContainerElement; // Vector container for the Container Element
   std::string buffer;
+  int autouuid;
 
   //-------------------------------------------------------------------------------------------
   public:
@@ -49,7 +50,10 @@ class TContainerList
   TContainerList();
   ~TContainerList();
 
-  void AddElement(int iuuid, const char *pstrdata);
+  void AddElement(const char *pstrdata);
+  void AddElementID(int iuuid, const char *pstrdata);
+  std::string PopFirstElement();
+  int Count();
   void DisplayVectorData();  
 };
 //---------------------------------------------------------------------------------------------
