@@ -142,6 +142,12 @@ std::string TSerialPort::GetDataLine()
 {
   return cmddata;
 }
+//--------------------------------------------------------------------------------------------
+
+void TSerialPort::ClearDataLine()
+{
+  cmddata.clear();
+}
 //---------------------------------------------------------------------------------------------
 
 void TSerialPort::WriteDataLine(std::string cmd)

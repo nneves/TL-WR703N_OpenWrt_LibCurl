@@ -177,7 +177,7 @@ static void *ThreadCurlRequest(void *arg)
 
   curl = curl_easy_init();
   if(curl) {
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
@@ -241,14 +241,14 @@ int main(void)
   // launch thread APIs (extra interfaces)
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
-  iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
+  //iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */
   /* the process and all threads before the threads have completed.   */
   //pthread_join( thread1, NULL);
 
-  debug(("Thread 1 returns: %d\n",iret1));
+  //debug(("Thread 1 returns: %d\n",iret1));
   //---------------------------------------------------------------------------------------
   
  
@@ -259,9 +259,10 @@ int main(void)
 
   //tcflush(*spInterface->GetFD(), TCIOFLUSH); // clear buffer
 
+  debug(("Starting main loop\n"));
   while(!terminate) 
   { 
-    // wirte data to printer
+    // write data to printer
     if(cList->Count() > 0)
     {
       cmd = cList->PopFirstElement();
@@ -271,10 +272,19 @@ int main(void)
       spInterface->WriteDataLine(cmd);
     }
 
-    if(false && spInterface->ReadDataLine())
+    if(spInterface->ReadDataLine())
     {
       result = spInterface->GetDataLine();
+      spInterface->ClearDataLine();
       debug(("%s\n", result.c_str()));
+
+      if(result.find("echo:SD init fail")!=std::string::npos)
+      {
+        debug(("Found Printer Init final cmd\nLaunch LibCURL Thread!\n"));
+        iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
+        pthread_join( thread1, NULL);
+        debug(("Returned from Thread!\n"));
+      }
     }    
   }// end while - main loop
   //---------------------------------------------------------------------------------------
