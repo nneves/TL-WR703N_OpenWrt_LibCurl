@@ -194,6 +194,8 @@ static void *ThreadCurlRequest(void *arg)
       if(res != CURLE_OK)
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
+
+      ((TSerialPort*)arg)->WriteDataLine("G91\n");
     }
 
     /* always cleanup */
@@ -262,6 +264,8 @@ int main(void)
   debug(("Starting main loop\n"));
   while(!terminate) 
   { 
+    debug(("»"));
+
     // write data to printer
     if(cList->Count() > 0)
     {
@@ -281,9 +285,11 @@ int main(void)
       if(result.find("echo:SD init fail")!=std::string::npos)
       {
         debug(("Found Printer Init final cmd\nLaunch LibCURL Thread!\n"));
-        iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
-        pthread_join( thread1, NULL);
+        iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) spInterface/*NULL*/);
+        //pthread_join( thread1, NULL);
         debug(("Returned from Thread!\n"));
+
+        spInterface->WriteDataLine("G91\n");
       }
     }    
   }// end while - main loop
