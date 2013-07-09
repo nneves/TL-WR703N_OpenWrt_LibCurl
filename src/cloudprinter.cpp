@@ -141,7 +141,7 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
   std::size_t found = strdata.find("\"printercmd\"");
   if(found != std::string::npos)
   {
-    debug(("--> %s", strdata.c_str()));
+    debug(("--> %s\n", strdata.c_str()));
 
     TJsonParser *pJsonParser = new TJsonParser(strdata.c_str());
     std::string result = pJsonParser->Prop("printercmd")->Value();
@@ -149,6 +149,7 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
     debug(("-->--> %s\n", result.c_str()));
 
     // add cmd to ContainerList
+    debug(("Adding CURL response data to ContainerList\n"));
     cList->AddElement(result.c_str());
 
 /*
@@ -172,7 +173,7 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
 
 static void *ThreadCurlRequest(void *arg)
 {
-  printf("Init. Thread\n");
+  printf("Initialize Curl Request Thread\n");
   curl_global_init(CURL_GLOBAL_ALL);
 
   curl = curl_easy_init();
@@ -186,6 +187,7 @@ static void *ThreadCurlRequest(void *arg)
     /* get data */
     while(!terminate) 
     {
+      debug(("Making CURL HTTP GET request...\n"));
       curl_easy_setopt(curl, CURLOPT_URL, "http://192.168.1.110:8081/api/remoteprintercallback/12345");
 
       /* Perform the request, res will get the return code */
@@ -195,14 +197,43 @@ static void *ThreadCurlRequest(void *arg)
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
 
-      ((TSerialPort*)arg)->WriteDataLine("G91\n");
+      //((TSerialPort*)arg)->WriteDataLine("G91\n");
     }
 
     /* always cleanup */
     curl_easy_cleanup(curl);
   }
-  debug(("Leaving Thread\n"));
+  debug(("Leaving Curl Request Thread\n"));
   pthread_exit(&iret1);
+  //return NULL;  
+}
+//---------------------------------------------------------------------------------------
+
+static void *ThreadSerialComRead(void *arg)
+{
+  std::string result;
+
+  printf("Initialize SerialCom Thread\n");
+  
+  /* get data */
+  while(!terminate) 
+  {
+    if(((TSerialPort*)arg)->ReadDataLine())
+    {
+      result = ((TSerialPort*)arg)->GetDataLine();
+      ((TSerialPort*)arg)->ClearDataLine();
+      ((TSerialPort*)arg)->FlushBuffer();
+      debug(("res=%s\n", result.c_str()));
+
+      if(result.find("echo:SD init fail")!=std::string::npos)
+      {
+        debug(("Found Printer Init final cmd\n"));       
+      }      
+    }
+  }
+
+  debug(("Leaving SerialCom Thread\n"));
+  pthread_exit(&iret2);
   //return NULL;  
 }
 //---------------------------------------------------------------------------------------
@@ -244,28 +275,39 @@ int main(void)
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
   //iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
+  iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) spInterface/*NULL*/);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */
   /* the process and all threads before the threads have completed.   */
   //pthread_join( thread1, NULL);
 
-  //debug(("Thread 1 returns: %d\n",iret1));
+  debug(("Thread 1 returns: %d\n",iret1));
   //---------------------------------------------------------------------------------------
-  
+  /* Create independent threads each of which will execute function */
+  //iret2 = pthread_create( &thread2, NULL, ThreadSerialComRead, (void*) NULL);
+  iret2 = pthread_create( &thread2, NULL, ThreadSerialComRead, (void*) spInterface/*NULL*/);
+
+  /* Wait till threads are complete before main continues. Unless we  */
+  /* wait we run the risk of executing an exit which will terminate   */
+  /* the process and all threads before the threads have completed.   */
+  //pthread_join( thread1, NULL);
+
+  debug(("Thread 2 returns: %d\n",iret2));
+  //---------------------------------------------------------------------------------------  
  
   //---------------------------------------------------------------------------------------
   // main loop
-  std::string result;
   std::string cmd;
 
   //tcflush(*spInterface->GetFD(), TCIOFLUSH); // clear buffer
 
   debug(("Starting main loop\n"));
+  sleep(5);
+  spInterface->WriteDataLine("G91\n");
   while(!terminate) 
-  { 
-    debug(("»"));
-
+  {
+    /*
     // write data to printer
     if(cList->Count() > 0)
     {
@@ -275,23 +317,48 @@ int main(void)
 
       spInterface->WriteDataLine(cmd);
     }
-
-    if(spInterface->ReadDataLine())
+    else
     {
-      result = spInterface->GetDataLine();
-      spInterface->ClearDataLine();
-      debug(("%s\n", result.c_str()));
+      debug(("."));
+      //usleep(5000); 
+      sleep(1);
+    } 
+    */
 
-      if(result.find("echo:SD init fail")!=std::string::npos)
-      {
-        debug(("Found Printer Init final cmd\nLaunch LibCURL Thread!\n"));
-        iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) spInterface/*NULL*/);
-        //pthread_join( thread1, NULL);
-        debug(("Returned from Thread!\n"));
+    if(cList->Count() > 0)
+    {
+      cmd = cList->PopFirstElement();
 
-        spInterface->WriteDataLine("G91\n");
-      }
-    }    
+      debug(("Found ContainerList Data, Writing to Serial Port: %s\n", cmd.c_str()));
+
+      spInterface->WriteDataLine(cmd);
+      sleep(1); //usleep(500000);
+      continue;
+    }  
+
+    for(int j=0; j<3; ++j)
+    {
+    spInterface->WriteDataLine("G1 X10.000000 Y0.000000 Z0.000000 F4000\n");
+    sleep(1); //usleep(500000);
+    }
+
+    for(int j=0; j<3; ++j)
+    {
+    spInterface->WriteDataLine("G1 X0.000000 Y10.000000 Z0.000000 F4000\n");
+    sleep(1); //usleep(500000);
+    }
+
+    for(int j=0; j<3; ++j)
+    {
+    spInterface->WriteDataLine("G1 X-10.000000 Y0.000000 Z0.000000 F4000\n");
+    sleep(1); //usleep(500000);
+    }
+
+    for(int j=0; j<3; ++j)
+    {
+    spInterface->WriteDataLine("G1 X0.000000 Y-10.000000 Z0.000000 F4000\n");
+    sleep(1); //usleep(500000);
+    }
   }// end while - main loop
   //---------------------------------------------------------------------------------------
   debug(("Exit mainloop\n"));

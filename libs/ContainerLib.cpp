@@ -23,12 +23,12 @@ TContainerElement::TContainerElement(int iuuid, const char *pstrdata)
   uuid = iuuid;
   strdata = std::string(pstrdata);
 
-  debug(("* ContainerElem[\"%d\"]=%s\r\n", uuid, strdata.c_str()));
+  debug(("* ContainerElem(\"%d\")=%s\r\n", uuid, strdata.c_str()));
 }
 
 TContainerElement::~TContainerElement()
 {
-  debug(("ContainerElem[\"%d\"] clear\r\n", uuid));
+  debug(("ContainerElem(\"%d\") clear\r\n", uuid));
   strdata.clear();
 }
 
@@ -60,7 +60,7 @@ TContainerList::~TContainerList()
 
   for(std::vector<TContainerElement*>::iterator it = vDataContainerElement.end()-1; it >= vDataContainerElement.begin(); --it)
   {
-    debug(("Deleting TContainerList vector element [\"%d\"]: %s\r\n", (*it)->GetID(), (*it)->GetData()));
+    debug(("Deleting TContainerList vector element (\"%d\"): %s\r\n", (*it)->GetID(), (*it)->GetData()));
     delete *it;
     *it = NULL;
   }
@@ -123,7 +123,7 @@ void TContainerList::DisplayVectorData()
   // iterate vector to retrieve Container Element objects
   for(std::vector<TContainerElement*>::iterator it = vDataContainerElement.begin(); it != vDataContainerElement.end(); ++it)
   {
-    debug(("-> ContainerElement[\"%d\"]=%s\r\n",(*it)->GetID(), (*it)->GetData()));
+    debug(("-> ContainerElement(\"%d\")=%s\r\n",(*it)->GetID(), (*it)->GetData()));
   }
 }
 //---------------------------------------------------------------------------------------------

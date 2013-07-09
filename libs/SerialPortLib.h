@@ -44,6 +44,7 @@ class TSerialPort
   void ClearDataLine();
   void WriteDataLine(std::string cmd);
   void TestPrinterGCODE();
+  void FlushBuffer();
 
 };
 //---------------------------------------------------------------------------------------------
