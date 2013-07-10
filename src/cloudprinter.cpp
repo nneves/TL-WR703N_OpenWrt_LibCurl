@@ -189,6 +189,7 @@ static void *ThreadCurlRequest(void *arg)
     {
       debug(("Making CURL HTTP GET request...\n"));
       curl_easy_setopt(curl, CURLOPT_URL, "http://192.168.1.110:8081/api/remoteprintercallback/12345");
+      //curl_easy_setopt(curl, CURLOPT_URL, "http://192.168.1.109:8081/api/remoteprintercallback/12345");
 
       /* Perform the request, res will get the return code */
       res = curl_easy_perform(curl);
@@ -222,13 +223,17 @@ static void *ThreadSerialComRead(void *arg)
     {
       result = ((TSerialPort*)arg)->GetDataLine();
       ((TSerialPort*)arg)->ClearDataLine();
-      ((TSerialPort*)arg)->FlushBuffer();
+      //((TSerialPort*)arg)->FlushBuffer();
       debug(("res=%s\n", result.c_str()));
 
       if(result.find("echo:SD init fail")!=std::string::npos)
       {
         debug(("Found Printer Init final cmd\n"));       
       }      
+    }
+    else
+    {
+      usleep(100000);
     }
   }
 
@@ -307,7 +312,6 @@ int main(void)
   spInterface->WriteDataLine("G91\n");
   while(!terminate) 
   {
-    /*
     // write data to printer
     if(cList->Count() > 0)
     {
@@ -319,12 +323,12 @@ int main(void)
     }
     else
     {
-      debug(("."));
+      debug((".\n"));
       //usleep(5000); 
       sleep(1);
     } 
-    */
 
+    /*
     if(cList->Count() > 0)
     {
       cmd = cList->PopFirstElement();
@@ -359,6 +363,7 @@ int main(void)
     spInterface->WriteDataLine("G1 X0.000000 Y-10.000000 Z0.000000 F4000\n");
     sleep(1); //usleep(500000);
     }
+    */   
   }// end while - main loop
   //---------------------------------------------------------------------------------------
   debug(("Exit mainloop\n"));

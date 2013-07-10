@@ -20,7 +20,9 @@ class TSerialPort
   //-------------------------------------------------------------------------------------------
   int fd;
   bool terminate;
+  //bool rx_data_available;
   struct termios oldtio,newtio;
+  struct sigaction saio;         // definition of signal action
   //---------------------------------------------------------------------------------------
   // aux variables for serial data parsing and grouping
   //---------------------------------------------------------------------------------------
@@ -30,6 +32,7 @@ class TSerialPort
   //char buffer[MAXBUFSIZE];
   std::string cmddata;
 
+  //void signal_handler_IO(int status);
   char ReadDataChar();
 
   //-------------------------------------------------------------------------------------------
