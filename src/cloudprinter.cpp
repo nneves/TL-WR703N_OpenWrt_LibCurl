@@ -212,11 +212,12 @@ static void *ThreadCurlRequest(void *arg)
 
 static void *ThreadSerialComRead(void *arg)
 {
+  /*
   std::string result;
 
   printf("Initialize SerialCom Thread\n");
   
-  /* get data */
+  // get data
   while(!terminate) 
   {
     if(((TSerialPort*)arg)->ReadDataLine())
@@ -239,10 +240,27 @@ static void *ThreadSerialComRead(void *arg)
 
   debug(("Leaving SerialCom Thread\n"));
   pthread_exit(&iret2);
-  //return NULL;  
+  //return NULL;
+  */  
 }
 //---------------------------------------------------------------------------------------
 
+/***************************************************************************
+* signal handler. sets wait_flag to FALSE, to indicate above loop that     *
+* characters have been received.                                           *
+***************************************************************************/
+
+void signal_handler_IO(int status)
+{
+  debug(("Received Serial Port SIGIO signal.\n"));
+  debug(("SIGIO_IN\n"));
+  while(spInterface->ReadRxData() > 0);
+  debug(("SIGIO_OUT\n"));
+}
+//---------------------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------- 
 int main(void)
 {
   //---------------------------------------------------------------------------------------
@@ -251,7 +269,7 @@ int main(void)
   pthread_t thread1, thread2;
   //int  iret1, iret2;
   //---------------------------------------------------------------------------------------
-  spInterface = new TSerialPort();
+  spInterface = new TSerialPort(signal_handler_IO);
   cList = new TContainerList();
 
   //---------------------------------------------------------------------------------------
@@ -291,14 +309,14 @@ int main(void)
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
   //iret2 = pthread_create( &thread2, NULL, ThreadSerialComRead, (void*) NULL);
-  iret2 = pthread_create( &thread2, NULL, ThreadSerialComRead, (void*) spInterface/*NULL*/);
+  //iret2 = pthread_create( &thread2, NULL, ThreadSerialComRead, (void*) spInterface/*NULL*/);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */
   /* the process and all threads before the threads have completed.   */
   //pthread_join( thread1, NULL);
 
-  debug(("Thread 2 returns: %d\n",iret2));
+  //debug(("Thread 2 returns: %d\n",iret2));
   //---------------------------------------------------------------------------------------  
  
   //---------------------------------------------------------------------------------------
@@ -317,9 +335,10 @@ int main(void)
     {
       cmd = cList->PopFirstElement();
 
-      debug(("Writing to Serial Port: %s\n", cmd.c_str()));
-
+      debug(("###############################################################\n"));
+      debug(("Writing to Serial Port: %s\n", cmd.c_str()));      
       spInterface->WriteDataLine(cmd);
+      debug(("###############################################################\n"));
     }
     else
     {

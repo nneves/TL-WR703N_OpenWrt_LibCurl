@@ -40,22 +40,9 @@ void PERROR(char* msg);
 #endif
 //-----------------------------------------------------------------------------------------
 
-/***************************************************************************
-* signal handler. sets wait_flag to FALSE, to indicate above loop that     *
-* characters have been received.                                           *
-***************************************************************************/
-bool rx_data_available = false; 
-
-void signal_handler_IO(int status)
-{
-  debug(("Received Serial Port SIGIO signal.\n"));
-  rx_data_available = true;
-}
-//---------------------------------------------------------------------------------------------  
-
 //---------------------------------------------------------------------------------------------
 // constructor 
-TSerialPort::TSerialPort()
+TSerialPort::TSerialPort(__sighandler_t psignal_handler_io)
 {
   debug(("Initialize Serial Port Object"));
   //---------------------------------------------------------------------------------------
@@ -78,7 +65,7 @@ TSerialPort::TSerialPort()
   }
   //---------------------------------------------------------------------------------------
   // install the signal handler before making the device asynchronous 
-  saio.sa_handler = signal_handler_IO;
+  saio.sa_handler = psignal_handler_io; //signal_handler_IO;
   //saio.sa_mask = 0;
   sigemptyset(&(saio.sa_mask));
   saio.sa_flags = 0;
@@ -89,7 +76,7 @@ TSerialPort::TSerialPort()
   fcntl(fd, F_SETOWN, getpid());
   /* Make the file descriptor asynchronous (the manual page says only 
      O_APPEND and O_NONBLOCK, will work with F_SETFL...) */
-  fcntl(fd, F_SETFL, FASYNC);
+  fcntl(fd, F_SETFL, FASYNC | FNDELAY);
   //---------------------------------------------------------------------------------------
   // setting serial port configurations
   tcgetattr(fd,&oldtio); // save current port settings
@@ -122,22 +109,22 @@ TSerialPort::~TSerialPort()
 // Private functions
 //---------------------------------------------------------------------------------------------
     
-char TSerialPort::ReadDataChar()
+int TSerialPort::ReadRxData()
 {  
-  char temp_buf[2];
+  std::string result;
+  char temp_buf[1026];
   int res = 0;
 
   // read data from serial port - will wait for data
-  res = read(fd, temp_buf, 1);   // returns after 1 chars have been input
-  temp_buf[1] = 0;
+  debug(("-»\n"));
+  res = read(fd, temp_buf, 1024);   // returns after 1 chars have been input
+  debug(("«-\n"));
+  temp_buf[res] = 0;
+  debug(("----------------------------------------------------------------------------------\n"));
+  debug(("[%d]: %s\n", res, temp_buf));
+  debug(("----------------------------------------------------------------------------------\n"));
 
-  debug(("%c",temp_buf[0]));
-
-  // check for errors - abort when receiving code 0x00 
-  //if(temp_buf[0] == 'z') 
-  //  return '\0';
-
-  return temp_buf[0];
+  return res;
 }
 //---------------------------------------------------------------------------------------------
 
@@ -152,6 +139,7 @@ int *TSerialPort::GetFD()
 
 bool TSerialPort::ReadDataLine()
 {  
+  /*
   char cdata;
 
   if(!rx_data_available)
@@ -185,6 +173,7 @@ bool TSerialPort::ReadDataLine()
 
   debug(("ReadDataLine: Terminate!\n"));
   rx_data_available = false;
+  */
   return false;
 }
 //---------------------------------------------------------------------------------------------

@@ -33,15 +33,18 @@ class TSerialPort
   std::string cmddata;
 
   //void signal_handler_IO(int status);
-  char ReadDataChar();
+  //char ReadDataChar();
 
   //-------------------------------------------------------------------------------------------
   public:
   //-------------------------------------------------------------------------------------------
-  TSerialPort();
+  TSerialPort(__sighandler_t psignal_handler_io);
   ~TSerialPort();
 
+  void signal_handler_IO(int status);
+
   int *GetFD();
+  int ReadRxData();
   bool ReadDataLine();
   std::string GetDataLine();
   void ClearDataLine();
