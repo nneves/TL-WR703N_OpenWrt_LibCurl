@@ -108,25 +108,6 @@ TSerialPort::~TSerialPort()
 //---------------------------------------------------------------------------------------------
 // Private functions
 //---------------------------------------------------------------------------------------------
-    
-int TSerialPort::ReadRxData()
-{  
-  std::string result;
-  char temp_buf[1026];
-  int res = 0;
-
-  // read data from serial port - will wait for data
-  debug(("-»\n"));
-  res = read(fd, temp_buf, 1024);   // returns after 1 chars have been input
-  debug(("«-\n"));
-  temp_buf[res] = 0;
-  debug(("----------------------------------------------------------------------------------\n"));
-  debug(("[%d]: %s\n", res, temp_buf));
-  debug(("----------------------------------------------------------------------------------\n"));
-
-  return res;
-}
-//---------------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------------
 // Public functions
@@ -137,63 +118,58 @@ int *TSerialPort::GetFD()
 }
 //---------------------------------------------------------------------------------------------
 
-bool TSerialPort::ReadDataLine()
+int TSerialPort::ReadRxData()
 {  
-  /*
-  char cdata;
+  char temp_buf[MAXRXSIZE + 1];
+  int res = 0;
 
-  if(!rx_data_available)
-  {
-    //debug(("ReadDataLine: No Rx data available!\n"));
-    return false;
-  }
+  // read data from serial port in non-blocking mode
+  debug(("-»\n"));
+  res = read(fd, temp_buf, MAXRXSIZE);   // read available data, will not block
+  debug(("«-\n"));
+  if(res >= 0)
+    temp_buf[res] = 0;
+  else
+    temp_buf[0] = 0;
+  debug(("----------------------------------------------------------------------------------\n"));
+  debug(("[%d]: %s\n", res, temp_buf));
+  debug(("----------------------------------------------------------------------------------\n"));
 
-  while(!terminate)
-  {
-    debug(("-»\n"));
-    cdata = ReadDataChar();
-    debug(("«-\n"));
+  // add data to internal buffer
+  cmddata += temp_buf;
 
-    cmddata.push_back(cdata);
-
-    if(cmddata.length() > MAXBUFSIZE)
-    {
-      debug(("ReadDataLine: Buffer reached MAXBUFSIZE!\n"));
-      rx_data_available = false;
-      return false;
-    }
- 
-    if(cdata == '\0' || cdata == '\r' || cdata == '\n')
-    {
-      debug(("ReadDataLine: Found ENDLINE char\n"));
-      rx_data_available = false;
-      return true;
-    }
-  }
-
-  debug(("ReadDataLine: Terminate!\n"));
-  rx_data_available = false;
-  */
-  return false;
+  return res;
 }
 //---------------------------------------------------------------------------------------------
 
-std::string TSerialPort::GetDataLine()
+std::string TSerialPort::GetData()
 {
   return cmddata;
 }
 //--------------------------------------------------------------------------------------------
 
-void TSerialPort::ClearDataLine()
+void TSerialPort::ClearData()
 {
   cmddata.clear();
 }
 //---------------------------------------------------------------------------------------------
 
-void TSerialPort::WriteDataLine(std::string cmd)
+void TSerialPort::WriteData(std::string icmd)
 {
+  debug(("TSerialPort: WriteDataLength=%d WriteData=%s", icmd.length(), icmd.c_str()));
   //tcflush(fd, TCIOFLUSH); // clear buffer
-  write(fd, cmd.c_str(), cmd.length());  
+
+  // verify if last char = 'n' and previous == '\'
+  // fix new line char split issue
+  if(icmd.at(icmd.length()-1) == 'n' && icmd.at(icmd.length()-2) == '\\')
+  {
+    debug(("TSerialPort: Fix \\n issue\n"));
+    icmd.pop_back();
+    icmd.pop_back();
+    icmd.push_back('\n');
+  }
+
+  write(fd, icmd.c_str(), icmd.length());  
 
 /*
     std::string cmd1 = "G28\n";

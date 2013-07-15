@@ -26,14 +26,11 @@ class TSerialPort
   //---------------------------------------------------------------------------------------
   // aux variables for serial data parsing and grouping
   //---------------------------------------------------------------------------------------
-  //char str[1024];
   
+  #define MAXRXSIZE 1024
   #define MAXBUFSIZE 4096
-  //char buffer[MAXBUFSIZE];
-  std::string cmddata;
 
-  //void signal_handler_IO(int status);
-  //char ReadDataChar();
+  std::string cmddata;
 
   //-------------------------------------------------------------------------------------------
   public:
@@ -45,13 +42,11 @@ class TSerialPort
 
   int *GetFD();
   int ReadRxData();
-  bool ReadDataLine();
-  std::string GetDataLine();
-  void ClearDataLine();
-  void WriteDataLine(std::string cmd);
+  std::string GetData();
+  void ClearData();
+  void WriteData(std::string cmd);
   void TestPrinterGCODE();
   void FlushBuffer();
-
 };
 //---------------------------------------------------------------------------------------------
 #endif

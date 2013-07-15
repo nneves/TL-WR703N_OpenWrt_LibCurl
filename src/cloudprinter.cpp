@@ -53,6 +53,7 @@
 #include "SerialPortLib.h"
 //-----------------------------------------------------------------------------------------
 volatile bool terminate = false;
+volatile int printer_ack = 0;
 //-----------------------------------------------------------------------------------------
 // Thread
 int iret1, iret2;
@@ -152,13 +153,6 @@ size_t curl_write( void *ptr, size_t size, size_t nmemb, void *stream)
     debug(("Adding CURL response data to ContainerList\n"));
     cList->AddElement(result.c_str());
 
-/*
-    printf("Writing to Serial Port!\n");
-
-    //tcflush(spInterface->GetFD(), TCIOFLUSH); // clear buffer
-    write(spInterface->GetFD(), result.c_str(), result.length());
-    //tcflush(spInterface->GetFD(), TCIOFLUSH); // clear buffer
-*/
     delete pJsonParser;
     pJsonParser = NULL;     
   }
@@ -197,8 +191,6 @@ static void *ThreadCurlRequest(void *arg)
       if(res != CURLE_OK)
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
-
-      //((TSerialPort*)arg)->WriteDataLine("G91\n");
     }
 
     /* always cleanup */
@@ -210,38 +202,42 @@ static void *ThreadCurlRequest(void *arg)
 }
 //---------------------------------------------------------------------------------------
 
-static void *ThreadSerialComRead(void *arg)
-{
-  /*
-  std::string result;
-
+static void *ThreadPrinterCmd(void *arg)
+{  
   printf("Initialize SerialCom Thread\n");
+  std::string cmd;
   
   // get data
   while(!terminate) 
   {
-    if(((TSerialPort*)arg)->ReadDataLine())
+    // checks if printer is ready to recieve cmds
+    if(printer_ack <= 0)
     {
-      result = ((TSerialPort*)arg)->GetDataLine();
-      ((TSerialPort*)arg)->ClearDataLine();
-      //((TSerialPort*)arg)->FlushBuffer();
-      debug(("res=%s\n", result.c_str()));
+      usleep(1000); // wait 1ms
+      continue;
+    }
 
-      if(result.find("echo:SD init fail")!=std::string::npos)
-      {
-        debug(("Found Printer Init final cmd\n"));       
-      }      
-    }
-    else
+    // check if Container List has data to be send
+    if(cList->Count() <= 0)
     {
-      usleep(100000);
+      usleep(1000); // wait 1ms
+      continue;
     }
+
+    // printer is ready and cList data is available to be sent
+    printer_ack--;
+
+    cmd = cList->PopFirstElement();
+    debug(("=======================================================================================\n"));
+    debug(("ThreadPrinterCmd: Found ContainerList Data, Writing to Serial Port: %s\n", cmd.c_str()));
+    debug(("=======================================================================================\n"));
+
+    spInterface->WriteData(cmd);    
   }
 
   debug(("Leaving SerialCom Thread\n"));
   pthread_exit(&iret2);
-  //return NULL;
-  */  
+  //return NULL; 
 }
 //---------------------------------------------------------------------------------------
 
@@ -256,6 +252,14 @@ void signal_handler_IO(int status)
   debug(("SIGIO_IN\n"));
   while(spInterface->ReadRxData() > 0);
   debug(("SIGIO_OUT\n"));
+
+  // serach for "ok\n" ack string
+  if(spInterface->GetData().find("ok\n")!=std::string::npos)
+  {
+    debug(("signal_handler_IO: Found OK response from printer:\n%s", spInterface->GetData().c_str()));
+    spInterface->ClearData();
+    printer_ack++;
+  }
 }
 //---------------------------------------------------------------------------------------------
 
@@ -271,13 +275,6 @@ int main(void)
   //---------------------------------------------------------------------------------------
   spInterface = new TSerialPort(signal_handler_IO);
   cList = new TContainerList();
-
-  //---------------------------------------------------------------------------------------
-  // aux variables for serial data parsing and grouping
-  //---------------------------------------------------------------------------------------
-  char temp_buf[2];
-  //char str[1024];
-
 
   //---------------------------------------------------------------------------------------
   // test containerlist
@@ -297,8 +294,7 @@ int main(void)
   // launch thread APIs (extra interfaces)
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
-  //iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
-  iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) spInterface/*NULL*/);
+  iret1 = pthread_create( &thread1, NULL, ThreadCurlRequest, (void*) NULL);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */
@@ -308,81 +304,57 @@ int main(void)
   debug(("Thread 1 returns: %d\n",iret1));
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
-  //iret2 = pthread_create( &thread2, NULL, ThreadSerialComRead, (void*) NULL);
-  //iret2 = pthread_create( &thread2, NULL, ThreadSerialComRead, (void*) spInterface/*NULL*/);
+  //iret2 = pthread_create( &thread2, NULL, ThreadPrinterCmd, (void*) NULL);
+  iret2 = pthread_create( &thread2, NULL, ThreadPrinterCmd, (void*)spInterface);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */
   /* the process and all threads before the threads have completed.   */
-  //pthread_join( thread1, NULL);
+  //pthread_join( thread2, NULL);
 
-  //debug(("Thread 2 returns: %d\n",iret2));
+  debug(("Thread 2 returns: %d\n",iret2));
   //---------------------------------------------------------------------------------------  
  
   //---------------------------------------------------------------------------------------
   // main loop
-  std::string cmd;
-
-  //tcflush(*spInterface->GetFD(), TCIOFLUSH); // clear buffer
 
   debug(("Starting main loop\n"));
-  sleep(5);
-  spInterface->WriteDataLine("G91\n");
+  sleep(10);
+  // send initial cmd (relative move), forces printer to respond 
+  spInterface->WriteData("G91\n");
+
+  std::string cmd;
   while(!terminate) 
   {
-    // write data to printer
-    if(cList->Count() > 0)
-    {
-      cmd = cList->PopFirstElement();
-
-      debug(("###############################################################\n"));
-      debug(("Writing to Serial Port: %s\n", cmd.c_str()));      
-      spInterface->WriteDataLine(cmd);
-      debug(("###############################################################\n"));
-    }
-    else
-    {
-      debug((".\n"));
-      //usleep(5000); 
-      sleep(1);
-    } 
+    debug(("©\n")); // heart beat output
+    sleep(5);
 
     /*
-    if(cList->Count() > 0)
-    {
-      cmd = cList->PopFirstElement();
-
-      debug(("Found ContainerList Data, Writing to Serial Port: %s\n", cmd.c_str()));
-
-      spInterface->WriteDataLine(cmd);
-      sleep(1); //usleep(500000);
-      continue;
-    }  
-
     for(int j=0; j<3; ++j)
     {
-    spInterface->WriteDataLine("G1 X10.000000 Y0.000000 Z0.000000 F4000\n");
+    spInterface->WriteData("G1 X10.000000 Y0.000000 Z0.000000 F4000\n");
     sleep(1); //usleep(500000);
     }
 
     for(int j=0; j<3; ++j)
     {
-    spInterface->WriteDataLine("G1 X0.000000 Y10.000000 Z0.000000 F4000\n");
+    spInterface->WriteData("G1 X0.000000 Y10.000000 Z0.000000 F4000\n");
     sleep(1); //usleep(500000);
     }
 
     for(int j=0; j<3; ++j)
     {
-    spInterface->WriteDataLine("G1 X-10.000000 Y0.000000 Z0.000000 F4000\n");
+    spInterface->WriteData("G1 X-10.000000 Y0.000000 Z0.000000 F4000\n");
     sleep(1); //usleep(500000);
     }
 
     for(int j=0; j<3; ++j)
     {
-    spInterface->WriteDataLine("G1 X0.000000 Y-10.000000 Z0.000000 F4000\n");
+    spInterface->WriteData("G1 X0.000000 Y-10.000000 Z0.000000 F4000\n");
     sleep(1); //usleep(500000);
     }
-    */   
+    */
+  
   }// end while - main loop
   //---------------------------------------------------------------------------------------
   debug(("Exit mainloop\n"));
