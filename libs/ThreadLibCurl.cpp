@@ -60,10 +60,13 @@
 #endif
 
 //-----------------------------------------------------------------------------------------
-// CURL Global function and callback
+// LOCALCURL NAMESPACE function and callback
 //-----------------------------------------------------------------------------------------
+namespace LOCALCURL
+{
 TThreadLibCurl *curlparent = NULL;
 
+/*static*/
 size_t curl_write(void *ptr, size_t size, size_t nmemb, void *stream)
 {  
   char *pdata = (char *)ptr;
@@ -97,7 +100,8 @@ size_t curl_write(void *ptr, size_t size, size_t nmemb, void *stream)
 }
 //-----------------------------------------------------------------------------------------
 
-static void* ThreadCurlRequest(void *arg)
+/*static*/
+void* ThreadCurlRequest(void *arg)
 {
   curlparent = ((TThreadLibCurl*)arg);
 
@@ -137,6 +141,7 @@ static void* ThreadCurlRequest(void *arg)
   //return NULL;  
 }
 //-----------------------------------------------------------------------------------------
+}
 
 // constructor 
 TThreadLibCurl::TThreadLibCurl(TContainerList *clist, const char *requesturl)
@@ -240,7 +245,7 @@ int TThreadLibCurl::StartThread()
   // launch thread APIs (extra interfaces)
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
-  iret1 = pthread_create(&thread1, NULL, ThreadCurlRequest, (void*)this);
+  iret1 = pthread_create(&thread1, NULL, LOCALCURL::ThreadCurlRequest, (void*)this);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */
