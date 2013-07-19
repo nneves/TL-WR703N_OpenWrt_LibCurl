@@ -42,6 +42,8 @@ class TThreadPrinter
 
   int StartThread();
   void TerminateThread();
+
+  void SendData(const char *gcodecmd);
 };
 //---------------------------------------------------------------------------------------------
 #endif

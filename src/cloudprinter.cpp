@@ -24,7 +24,6 @@
 //#include <string>
 //-----------------------------------------------------------------------------------------
 #include "ContainerLib.h"
-#include "SerialPortLib.h"
 #include "ThreadLibCurl.h"
 #include "ThreadPrinter.h"
 //-----------------------------------------------------------------------------------------
@@ -106,7 +105,7 @@ int main(void)
   debug(("Starting main loop\n"));
   sleep(10);
   // send initial cmd (relative move), forces printer to respond 
-  NSInterfaces::thrdPrinter->spinterface->WriteData("G91\n");
+  NSInterfaces::thrdPrinter->SendData("G91\n");
 
   std::string cmd;
   while(!NSInterfaces::terminate) 

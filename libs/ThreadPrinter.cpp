@@ -169,3 +169,9 @@ void TThreadPrinter::TerminateThread()
   terminate = true;
 }
 //-----------------------------------------------------------------------------------------
+
+void TThreadPrinter::SendData(const char *gcodecmd)
+{
+  spinterface->WriteData(gcodecmd);
+}
+//-----------------------------------------------------------------------------------------
