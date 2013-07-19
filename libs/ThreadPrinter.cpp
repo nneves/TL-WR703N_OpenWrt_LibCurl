@@ -42,8 +42,8 @@ namespace NSPrinter
   TThreadPrinter *printerparent = NULL;
   volatile int printer_ack = 0;
 //-----------------------------------------------------------------------------------------
-
-static void *ThreadPrinterCmd(void *arg)
+/*static */
+void *ThreadPrinterCmd(void *arg)
 {  
   printerparent = ((TThreadPrinter*)arg);
 
@@ -91,6 +91,9 @@ static void *ThreadPrinterCmd(void *arg)
 
 void signal_handler_IO(int status)
 {
+  if(!printerparent || !printerparent->spinterface)
+    return;
+
   debug(("Received Serial Port SIGIO signal.\n"));
   debug(("SIGIO_IN\n"));
   while(printerparent->spinterface->ReadRxData() > 0);
@@ -110,7 +113,7 @@ void signal_handler_IO(int status)
 //-----------------------------------------------------------------------------------------
 
 // constructor 
-TThreadPrinter::TThreadPrinter(TContainerList *clist, TSerialPort *spint)
+TThreadPrinter::TThreadPrinter(TContainerList *clist)
 {
   debug(("Initialize Thread Printer Object\n"));
  
@@ -119,11 +122,10 @@ TThreadPrinter::TThreadPrinter(TContainerList *clist, TSerialPort *spint)
   if(clist)
     containerlist = clist;
 
-  if(spinterface)
-    spinterface = spint;
+  spinterface = new TSerialPort(NSPrinter::signal_handler_IO);
 
   //debug(("Thread Serial Device: %s\n", device_name.c_str()));
-}
+}  
 //-----------------------------------------------------------------------------------------
 // destructor 
 TThreadPrinter::~TThreadPrinter()
@@ -149,7 +151,7 @@ int TThreadPrinter::StartThread()
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
   //iret2 = pthread_create( &thread2, NULL, ThreadPrinterCmd, (void*) NULL);
-  iret2 = pthread_create(&thread2, NULL, NSPrinter::ThreadPrinterCmd, (void*)spinterface);
+  iret2 = pthread_create(&thread2, NULL, NSPrinter::ThreadPrinterCmd, (void*)this);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */

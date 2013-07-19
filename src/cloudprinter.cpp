@@ -33,7 +33,6 @@ namespace NSInterfaces
   //---------------------------------------------------------------------------------------
   volatile bool terminate = false;
   //---------------------------------------------------------------------------------------
-  TSerialPort *spInterface = NULL;
   TContainerList *cList = NULL;
   TThreadLibCurl *thrdLibCurl = NULL;
   TThreadPrinter *thrdPrinter = NULL;
@@ -41,12 +40,6 @@ namespace NSInterfaces
   void clearobjects()
   {
     // destroy objects
-    if(spInterface)
-    {
-      delete spInterface;
-      spInterface = NULL;
-    }
-
     if(thrdLibCurl)
     {
       delete thrdLibCurl;
@@ -93,10 +86,9 @@ int main(void)
   //---------------------------------------------------------------------------------------
   std::string url = "http://192.168.1.110:8081/api/remoteprintercallback/12345";
 
-  NSInterfaces::spInterface = new TSerialPort(NSPrinter::signal_handler_IO);
   NSInterfaces::cList = new TContainerList();
   NSInterfaces::thrdLibCurl = new TThreadLibCurl(NSInterfaces::cList, url.c_str());
-  NSInterfaces::thrdPrinter = new TThreadPrinter(NSInterfaces::cList, NSInterfaces::spInterface);
+  NSInterfaces::thrdPrinter = new TThreadPrinter(NSInterfaces::cList);
  
   signal(SIGTERM, cleanup);
   signal(SIGINT, cleanup);
@@ -114,7 +106,7 @@ int main(void)
   debug(("Starting main loop\n"));
   sleep(10);
   // send initial cmd (relative move), forces printer to respond 
-  NSInterfaces::spInterface->WriteData("G91\n");
+  NSInterfaces::thrdPrinter->spinterface->WriteData("G91\n");
 
   std::string cmd;
   while(!NSInterfaces::terminate) 
