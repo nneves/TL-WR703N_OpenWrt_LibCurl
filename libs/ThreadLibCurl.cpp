@@ -60,9 +60,9 @@
 #endif
 
 //-----------------------------------------------------------------------------------------
-// LOCALCURL NAMESPACE function and callback
+// NSCurl NAMESPACE function and callback
 //-----------------------------------------------------------------------------------------
-namespace LOCALCURL
+namespace NSCurl
 {
 TThreadLibCurl *curlparent = NULL;
 
@@ -138,7 +138,7 @@ void* ThreadCurlRequest(void *arg)
   }
   debug(("Leaving Curl Request Thread\n"));
   pthread_exit(&(curlparent->iret1));
-  //return NULL;  
+  return NULL;  
 }
 //-----------------------------------------------------------------------------------------
 }
@@ -188,6 +188,7 @@ TThreadLibCurl::~TThreadLibCurl()
 
 void TThreadLibCurl::test_jsonparser()
 {
+  #if 0
   // testing JSON Parser Lib
   //const char data[] = "{\"a\":1,\"d\":\"some data\",\"h\":true}";
   //const char data[] = "{\"a\":\"handshake\",\"d\":\"some data\",\"h\":\"true\"}";
@@ -212,12 +213,14 @@ void TThreadLibCurl::test_jsonparser()
   result = pJsonParser->Prop("z")->Prop("cid")->Value();
 
   delete pJsonParser;
-  pJsonParser = NULL;  
+  pJsonParser = NULL;
+  #endif  
 }
 //-----------------------------------------------------------------------------------------
 
 void TThreadLibCurl::test_containerlist()
 {
+  #if 0
   TContainerList *contlist = new TContainerList();
 
   contlist->AddElementID(1, "ABC");
@@ -229,6 +232,7 @@ void TThreadLibCurl::test_containerlist()
 
   delete contlist;
   contlist = NULL;
+  #endif
 }
 //-----------------------------------------------------------------------------------------
 
@@ -245,7 +249,7 @@ int TThreadLibCurl::StartThread()
   // launch thread APIs (extra interfaces)
   //---------------------------------------------------------------------------------------
   /* Create independent threads each of which will execute function */
-  iret1 = pthread_create(&thread1, NULL, LOCALCURL::ThreadCurlRequest, (void*)this);
+  iret1 = pthread_create(&thread1, NULL, NSCurl::ThreadCurlRequest, (void*)this);
 
   /* Wait till threads are complete before main continues. Unless we  */
   /* wait we run the risk of executing an exit which will terminate   */
@@ -253,6 +257,8 @@ int TThreadLibCurl::StartThread()
   //pthread_join( thread1, NULL);
 
   debug(("LibCurl Thread returns: %d\n",iret1));
+
+  return iret1;
 }
 //-----------------------------------------------------------------------------------------
 
