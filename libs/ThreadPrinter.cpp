@@ -1,25 +1,10 @@
- //-----------------------------------------------------------------------------------------
-// Thread
-#include <pthread.h>
-// Http Server
-#include <stdarg.h>
-#include <unistd.h>
-#include <string.h>
-#include <time.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <resolv.h>
-#include <arpa/inet.h>
-// GPS Parser
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <errno.h>
-#include <stdio.h>  // printf
-#include <stdlib.h> // exit
-#include <string.h> // strncpy strnstr strcmp
-#include <signal.h>
+//-----------------------------------------------------------------------------------------
+#include <pthread.h> // thread
+#include <unistd.h>  // usleep
+#include <stdio.h>   // printf
+#include <stdlib.h>  // exit
+#include <string.h>  // strncpy strnstr strcmp
+#include <signal.h>  // event signal
 //-----------------------------------------------------------------------------------------
 #include <string>
 //-----------------------------------------------------------------------------------------

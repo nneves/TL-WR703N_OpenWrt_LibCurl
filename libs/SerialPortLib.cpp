@@ -3,7 +3,6 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/signal.h>
-
 #include <fcntl.h>
 #include <termios.h>
 #include <errno.h>
@@ -11,10 +10,6 @@
 #include <stdlib.h> // exit
 #include <string.h> // strncpy strnstr strcmp
 #include <unistd.h> // open, close, read
-//#include <signal.h>
-
-//#include <vector>
-//#include <string>
 //-----------------------------------------------------------------------------------------
 #include "SerialPortLib.h"
 //-----------------------------------------------------------------------------------------
