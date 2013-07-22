@@ -18,7 +18,7 @@
 #define BAUDRATE3 B57600
 #define BAUDRATE4 B115200
 #define BAUDRATE5 B230400
-#define MODEMDEVICE "/dev/ttyACM0"
+//#define MODEMDEVICE "/dev/ttyACM0"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 //-----------------------------------------------------------------------------------------
 #define TCPIP_PORT  3090
@@ -37,7 +37,7 @@ void PERROR(char* msg);
 
 //---------------------------------------------------------------------------------------------
 // constructor 
-TSerialPort::TSerialPort(__sighandler_t psignal_handler_io)
+TSerialPort::TSerialPort(__sighandler_t psignal_handler_io, const char *devicename)
 {
   debug(("Initialize Serial Port Object"));
   //---------------------------------------------------------------------------------------
@@ -51,11 +51,13 @@ TSerialPort::TSerialPort(__sighandler_t psignal_handler_io)
   tcgetattr(fd,&oldtio); 
   //---------------------------------------------------------------------------------------
   // open serial port
-  fd = open(MODEMDEVICE, O_RDWR | O_NOCTTY | O_NONBLOCK);
+  //fd = open(MODEMDEVICE, O_RDWR | O_NOCTTY | O_NONBLOCK);
+  fd = open(devicename, O_RDWR | O_NOCTTY | O_NONBLOCK);
   if(fd<0) 
   {
     debug(("Error: open serial port\r\n"));
-    perror(MODEMDEVICE);
+    //perror(MODEMDEVICE);
+    perror(devicename);
     exit(-1); 
   }
   //---------------------------------------------------------------------------------------
@@ -159,26 +161,14 @@ void TSerialPort::WriteData(std::string icmd)
   if(icmd.at(icmd.length()-1) == 'n' && icmd.at(icmd.length()-2) == '\\')
   {
     debug(("TSerialPort: Fix \\n issue\n"));
-    icmd.pop_back();
-    icmd.pop_back();
-    icmd.push_back('\n');
+    
+    std::string fixedcmd = icmd.substr(0, icmd.length()-2) + '\n';
+    write(fd, fixedcmd.c_str(), fixedcmd.length());  
   }
-
-  write(fd, icmd.c_str(), icmd.length());  
-
-/*
-    std::string cmd1 = "G28\n";
-    printf("Send Printer cmd: %s\r\n", cmd1.c_str());
-    write(fd, cmd1.c_str(), cmd1.length());
-
-  tcflush(fd, TCIOFLUSH); // clear buffer
-
-    cmd1 = "G1 X10 Y20 F8000\n";
-    printf("Send Printer cmd: %s\r\n", cmd1.c_str());
-    write(fd, cmd1.c_str(), cmd1.length());    
-
-  tcflush(fd, TCIOFLUSH); // clear buffer
-  */
+  else
+  {
+    write(fd, icmd.c_str(), icmd.length());  
+  }
 }
 //---------------------------------------------------------------------------------------------
 

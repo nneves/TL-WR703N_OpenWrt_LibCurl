@@ -70,10 +70,11 @@ int main(void)
 {
   //---------------------------------------------------------------------------------------
   std::string url = "http://192.168.1.110:8081/api/remoteprintercallback/12345";
+  std::string dev = "/dev/ttyACM0";
 
   NSInterfaces::cList = new TContainerList();
   NSInterfaces::thrdLibCurl = new TThreadLibCurl(NSInterfaces::cList, url.c_str());
-  NSInterfaces::thrdPrinter = new TThreadPrinter(NSInterfaces::cList);
+  NSInterfaces::thrdPrinter = new TThreadPrinter(NSInterfaces::cList, dev.c_str());
  
   signal(SIGTERM, cleanup);
   signal(SIGINT, cleanup);

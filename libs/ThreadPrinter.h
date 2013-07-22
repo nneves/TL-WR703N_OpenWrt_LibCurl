@@ -37,7 +37,7 @@ class TThreadPrinter
   TContainerList *containerlist;
   TSerialPort *spinterface;
 
-  TThreadPrinter(TContainerList *containerlist=NULL);
+  TThreadPrinter(TContainerList *containerlist=NULL, const char *devicename=NULL);
   ~TThreadPrinter();
 
   int StartThread();

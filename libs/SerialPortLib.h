@@ -36,7 +36,7 @@ class TSerialPort
   //-------------------------------------------------------------------------------------------
   public:
   //-------------------------------------------------------------------------------------------
-  TSerialPort(__sighandler_t psignal_handler_io);
+  TSerialPort(__sighandler_t psignal_handler_io, const char *devicename=NULL);
   ~TSerialPort();
 
   void signal_handler_IO(int status);

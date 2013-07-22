@@ -98,7 +98,7 @@ void signal_handler_IO(int status)
 //-----------------------------------------------------------------------------------------
 
 // constructor 
-TThreadPrinter::TThreadPrinter(TContainerList *clist)
+TThreadPrinter::TThreadPrinter(TContainerList *clist, const char *devicename)
 {
   debug(("Initialize Thread Printer Object\n"));
  
@@ -107,9 +107,18 @@ TThreadPrinter::TThreadPrinter(TContainerList *clist)
   if(clist)
     containerlist = clist;
 
-  spinterface = new TSerialPort(NSPrinter::signal_handler_IO);
+  if(devicename)
+  {
+    debug(("Thread Serial Device: %s\n", devicename));
+    spinterface = new TSerialPort(NSPrinter::signal_handler_IO, devicename);
+  }
+  else
+  {
+    const char *tdev = "/dev/ttyACM0";
+    debug(("Thread Serial Device: %s\n", tdev));
+    spinterface = new TSerialPort(NSPrinter::signal_handler_IO, tdev);
+  }
 
-  //debug(("Thread Serial Device: %s\n", device_name.c_str()));
 }  
 //-----------------------------------------------------------------------------------------
 // destructor 
@@ -118,6 +127,12 @@ TThreadPrinter::~TThreadPrinter()
   debug(("Destroy Thread Printer Object\n"));
 
   TerminateThread();
+
+  if(spinterface)
+  {
+    delete spinterface;
+    spinterface = NULL;
+  }
 }
 //-----------------------------------------------------------------------------------------
 // Private functions
