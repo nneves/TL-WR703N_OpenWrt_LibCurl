@@ -69,23 +69,42 @@ TContainerList::~TContainerList()
   vDataContainerElement.clear();
 }
 //---------------------------------------------------------------------------------------------
-// private function
+// public function
 //---------------------------------------------------------------------------------------------
 
 void TContainerList::AddElement(const char *pstrdata)
 {
+  //debug(("TContainerList::AddElement -> BEFORE LOCK\n"));
+  //std::lock_guard<std::mutex> lk(protectcontainer);
+  //debug(("TContainerList::AddElement -> AFTER LOCK\n"));
+
   autouuid++;
   AddElementID(autouuid, pstrdata);
+  // protectcontainer mutex is automatically released when lock goes out of scope
+
+  //debug(("TContainerList::AddElement -> UNLOCK\n"));
 }
 //---------------------------------------------------------------------------------------------
 
 void TContainerList::AddElementID(int iuuid, const char *pstrdata)
 {
+  try
+  {
+    debug(("TContainerList::AddElementID -> BEFORE LOCK\n"));
+    std::lock_guard<std::mutex> lk(protectcontainer);
+    debug(("TContainerList::AddElementID -> AFTER LOCK\n"));
 
-  // create new Container Element object
-  TContainerElement *pContainerElement = new TContainerElement(iuuid, pstrdata);
-  // add Container Element to vector
-  vDataContainerElement.push_back(pContainerElement);
+    // create new Container Element object
+    TContainerElement *pContainerElement = new TContainerElement(iuuid, pstrdata);
+    // add Container Element to vector
+    vDataContainerElement.push_back(pContainerElement);
+  }
+  __catch(...)
+  {
+    debug(("TContainerList::AddElementID -> UNLOCK\n"));    
+  }
+
+  debug(("TContainerList::AddElementID -> UNLOCK\n"));
 
   DisplayVectorData();
 }
@@ -93,6 +112,10 @@ void TContainerList::AddElementID(int iuuid, const char *pstrdata)
 
 std::string TContainerList::PopFirstElement()
 {
+  debug(("TContainerList::PopFirstElement -> BEFORE LOCK\n"));
+  std::lock_guard<std::mutex> lk(protectcontainer);
+  debug(("TContainerList::PopFirstElement -> AFTER LOCK\n"));
+
   std::string result;
 
   if(vDataContainerElement.size() <= 0)
@@ -108,28 +131,35 @@ std::string TContainerList::PopFirstElement()
   vDataContainerElement.erase(vDataContainerElement.begin());
   debug(("Completed Vector Erase\n"));
   
+  debug(("TContainerList::PopFirstElement -> UNLOCK\n"));
   return result;
 }
 //---------------------------------------------------------------------------------------------
 
 int TContainerList::Count()
 {
+  //debug(("TContainerList::Count -> BEFORE LOCK\n"));
+  std::lock_guard<std::mutex> lk(protectcontainer);
+  //debug(("TContainerList::Count -> AFTER LOCK\n"));
+
+  //debug(("TContainerList::Count -> UNLOCK\n"));
+
   return vDataContainerElement.size();
 }
 //---------------------------------------------------------------------------------------------
 
 void TContainerList::DisplayVectorData()
 {
+  debug(("TContainerList::DisplayVectorData -> BEFORE LOCK\n"));
+  std::lock_guard<std::mutex> lk(protectcontainer);
+  debug(("TContainerList::DisplayVectorData -> AFTER LOCK\n"));
+
   // iterate vector to retrieve Container Element objects
   for(std::vector<TContainerElement*>::iterator it = vDataContainerElement.begin(); it != vDataContainerElement.end(); ++it)
   {
     debug(("-> ContainerElement(\"%d\")=%s\r\n",(*it)->GetID(), (*it)->GetData()));
   }
-}
-//---------------------------------------------------------------------------------------------
 
-//---------------------------------------------------------------------------------------------
-// public functions
-//---------------------------------------------------------------------------------------------
-//
+  debug(("TContainerList::DisplayVectorData -> UNLOCK\n"));
+}
 //---------------------------------------------------------------------------------------------

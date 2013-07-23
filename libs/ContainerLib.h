@@ -11,6 +11,7 @@
 //---------------------------------------------------------------------------------------------
 #include <vector>
 #include <string>
+#include <mutex>
 //---------------------------------------------------------------------------------------------
 class TContainerList;
 class TContainerElement;
@@ -43,6 +44,8 @@ class TContainerList
   std::vector<TContainerElement*>vDataContainerElement; // Vector container for the Container Element
   std::string buffer;
   int autouuid;
+
+  std::mutex protectcontainer;
 
   //-------------------------------------------------------------------------------------------
   public:
