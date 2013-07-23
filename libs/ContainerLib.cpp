@@ -74,15 +74,15 @@ TContainerList::~TContainerList()
 
 void TContainerList::AddElement(const char *pstrdata)
 {
-  //debug(("TContainerList::AddElement -> BEFORE LOCK\n"));
-  //std::lock_guard<std::mutex> lk(protectcontainer);
-  //debug(("TContainerList::AddElement -> AFTER LOCK\n"));
+  debug(("TContainerList::AddElement -> BEFORE LOCK (AUTOUUID)\n"));
+  std::lock_guard<std::mutex> lk(protectautouuid);
+  debug(("TContainerList::AddElement -> AFTER LOCK (AUTOUUID)\n"));
 
   autouuid++;
   AddElementID(autouuid, pstrdata);
-  // protectcontainer mutex is automatically released when lock goes out of scope
-
-  //debug(("TContainerList::AddElement -> UNLOCK\n"));
+  
+  // protectautouuid mutex is automatically released when lock goes out of scope
+  debug(("TContainerList::AddElement -> UNLOCK (AUTOUUID)\n"));
 }
 //---------------------------------------------------------------------------------------------
 

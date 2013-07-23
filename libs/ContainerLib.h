@@ -46,6 +46,7 @@ class TContainerList
   int autouuid;
 
   std::mutex protectcontainer;
+  std::mutex protectautouuid;
 
   //-------------------------------------------------------------------------------------------
   public:
